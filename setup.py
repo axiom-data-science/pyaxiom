@@ -33,7 +33,7 @@ setup(
     license             = 'LGPLv3',
     author              = "Kyle Wilcox",
     author_email        = "kyle@axiomalaska.com",
-    url                 = "https://git.axiom/axiom/pyncml",
+    url                 = "https://git.axiom/axiom/pyaxiom",
     packages            = find_packages(),
     install_requires    = reqs,
     tests_require       = ['pytest'],
