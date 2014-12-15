@@ -3,17 +3,25 @@
 A general helper library for using python at Axiom
 
 
-## Gridded NetCDF Collections
+## Installation
+
+```bash
+pip install git+http://git.axiom/axiom/pyaxiom.git
+```
+
+### Gridded NetCDF Collections
 
 #### Binning files
 
-This will combine many files into a single file.  Useful for cleanup and optimization.
+`pyaxiom` installs an executable called `binner` that will combine many
+files into a single file.  Useful for cleanup and optimization.
+
 If you have a script that is opening and reading hundreds of files, those open operations
 are slow, and you should combine them into a single file.  This doesn't handle files that
-overlap in time or files that have data on either side of a bin boundary.
+overlap in time or files that have data on both sides of a bin boundary.
 
 ```
-usage: binner.py [-h] -o OUTPUT -d {day,month,week,year} [-f [FACTOR]]
+usage: binner [-h] -o OUTPUT -d {day,month,week,year} [-f [FACTOR]]
                  [-n [NCML_FILE]] [-g [GLOB_STRING]]
 
 optional arguments:
@@ -43,29 +51,28 @@ optional arguments:
 
 ###### Directory globbing
 ```bash
-ipython -- pyaxiom/netcdf/grids/binner.py \
-    --output ./output/monthly_bins \
-    --glob_string "pyaxiom/tests/resources/coamps/cencoos_4km/wnd_tru/10m/*.nc" \
-    -d month \
-    -f 1
+binner \
+  --output ./output/monthly_bins \
+  --glob_string "pyaxiom/tests/resources/coamps/cencoos_4km/wnd_tru/10m/*.nc" \
+  -d month \
+  -f 1
 ```
 
 ###### Directory globbing and applying NcML file to each member
 ```bash
-ipython -- pyaxiom/netcdf/grids/binner.py \
-    --output ./output/monthly_bins \
-    --glob_string "pyaxiom/tests/resources/coamps/cencoos_4km/wnd_tru/10m/*.nc" \
-    -n pyaxiom/tests/resources/coamps_10km_wind.ncml \
-    -d month \
-    -f 1
+binner \
+  --output ./output/monthly_bins \
+  --glob_string "pyaxiom/tests/resources/coamps/cencoos_4km/wnd_tru/10m/*.nc" \
+  -n pyaxiom/tests/resources/coamps_10km_wind.ncml \
+  -d month \
+  -f 1
 ```
 
 ###### NcML aggregation reading the `<scan>` element
-
 ```bash
-ipython -- pyaxiom/netcdf/grids/binner.py \
-    --output ./output/monthly_bins \
-    -n pyaxiom/tests/resources/coamps_10km_wind.ncml \
-    -d month \
-    -f 1
+binner \
+  --output ./output/monthly_bins \
+  -n pyaxiom/tests/resources/coamps_10km_wind.ncml \
+  -d month \
+  -f 1
 ```
