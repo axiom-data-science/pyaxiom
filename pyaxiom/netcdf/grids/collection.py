@@ -34,15 +34,15 @@ class DotDict(object):
 class Collection(object):
 
     @classmethod
-    def from_ncml_file(cls, ncml_path):
+    def from_ncml_file(cls, ncml_path, apply_to_members=None):
         try:
             with open(ncml_path) as f:
-                return cls(pyncml.scan(f.read()))
+                return cls(pyncml.scan(f.read(), apply_to_members=apply_to_members))
         except BaseException:
             logger.exception("Could not load Collection from NcML.  Please check the NcML.")
 
     @classmethod
-    def from_directory(cls, directory, suffix=".nc", subdirs=True, dimName='time'):
+    def from_directory(cls, directory, suffix=".nc", subdirs=True, dimName='time', apply_to_members=None):
 
         if not os.path.isdir(directory):
             logger.error("Directory {0} does not exists or I do not have the correct permissions to access".format(directory))
@@ -56,7 +56,7 @@ class Collection(object):
                     </netcdf>
                """.format(dimName, directory, suffix, subdirs)
         try:
-            return cls(pyncml.scan(ncml))
+            return cls(pyncml.scan(ncml, apply_to_members=apply_to_members))
         except BaseException:
             logger.exception("Could not load Collection from Directory.")
 

@@ -22,7 +22,7 @@ overlap in time or files that have data on both sides of a bin boundary.
 
 ```
 usage: binner [-h] -o OUTPUT -d {day,month,week,year} [-f [FACTOR]]
-                 [-n [NCML_FILE]] [-g [GLOB_STRING]]
+                 [-n [NCML_FILE]] [-g [GLOB_STRING]] [-a]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -45,6 +45,10 @@ optional arguments:
                         required. If both are passed in, the 'glob_string' is
                         used to identify files for the collection and the
                         'ncml_file' is applied against each member.
+  -a, --apply_to_members
+                        Flag to apply the NcML to each member of the
+                        aggregation before extracting metadata. Ignored if
+                        using a 'glob_string'. Defaults to False
 ```
 
 ##### Examples

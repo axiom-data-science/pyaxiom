@@ -30,6 +30,23 @@ class NetcdfCollectionTestFromDirectory(unittest.TestCase):
         self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
 
 
+class NetcdfCollectionTestFromDirectoryNoNcmlToMembers(unittest.TestCase):
+
+    def setUp(self):
+        input_folder = os.path.join(os.path.dirname(__file__), "resources/coamps/cencoos_4km/wnd_tru/10m/")
+        self.c = Collection.from_directory(input_folder, apply_to_members=False)
+
+    def test_name(self):
+        self.assertEquals(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
+
+    def test_members(self):
+        self.assertEquals(len(self.c.aggregation.members), 14)
+
+    def test_time(self):
+        self.assertEquals(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
+
+
 class NetcdfCollectionTestFromGlob(unittest.TestCase):
 
     def setUp(self):

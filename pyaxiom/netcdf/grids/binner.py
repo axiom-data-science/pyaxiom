@@ -24,11 +24,11 @@ logger.setLevel(logging.INFO)
 logger.addHandler(ch)
 
 
-def main(output_path, delta, ncml_file=None, glob_string=None):
+def main(output_path, delta, ncml_file=None, glob_string=None, apply_to_members=None):
     if glob_string is not None:
         collection = Collection.from_glob(glob_string, ncml=ncml_file)
     elif ncml_file is not None:
-        collection = Collection.from_ncml_file(ncml_file)
+        collection = Collection.from_ncml_file(ncml_file, apply_to_members=apply_to_members)
 
     if delta.years > 0:
         starting = collection.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0, day=1, month=1)
@@ -81,6 +81,10 @@ if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
                               the 'glob_string' is used to identify files for the collection and the 'ncml_file' is applied against each member.",
                         nargs='?',
                         type=unicode)
+    parser.add_argument('-a', '--apply_to_members',
+                        help="Flag to apply the NcML to each member of the aggregation before extracting metadata. \
+                              Ignored if using a 'glob_string'.  Defaults to False.",
+                        action='store_true')
 
     args        = parser.parse_args()
     output_path = str(os.path.realpath(args.output))
@@ -88,8 +92,6 @@ if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
     factor      = abs(args.factor)
     glob_string = args.glob_string
     ncml_file   = os.path.realpath(args.ncml_file)
-
-    print glob_string
 
     if delta == 'day':
         delta = relativedelta(days=factor)
@@ -100,4 +102,4 @@ if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
     elif delta == 'year':
         delta = relativedelta(years=factor)
 
-    main(output_path=output_path, delta=delta, ncml_file=ncml_file, glob_string=glob_string)
+    main(output_path=output_path, delta=delta, ncml_file=ncml_file, glob_string=glob_string, apply_to_members=args.apply_to_members)
