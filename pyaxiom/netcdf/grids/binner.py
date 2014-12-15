@@ -4,9 +4,12 @@ import os
 import sys
 import argparse
 
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 from pyaxiom.netcdf.grids import Collection
+
+import pytz
 
 # Log to stdout
 import logging
@@ -24,7 +27,7 @@ logger.setLevel(logging.INFO)
 logger.addHandler(ch)
 
 
-def main(output_path, delta, ncml_file=None, glob_string=None, apply_to_members=None):
+def main(output_path, delta, ncml_file=None, glob_string=None, apply_to_members=None, hard_start=None, hard_end=None):
     if glob_string is not None:
         collection = Collection.from_glob(glob_string, ncml=ncml_file)
     elif ncml_file is not None:
@@ -37,7 +40,7 @@ def main(output_path, delta, ncml_file=None, glob_string=None, apply_to_members=
     elif delta.days > 0:
         starting = collection.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0)
 
-    windows = collection.bins(delta=delta, starting=starting)
+    windows = collection.bins(delta=delta, starting=starting, hard_start=hard_start, hard_end=hard_end)
 
     # Create output directory
     if not os.path.exists(output_path):
@@ -85,6 +88,12 @@ if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
                         help="Flag to apply the NcML to each member of the aggregation before extracting metadata. \
                               Ignored if using a 'glob_string'.  Defaults to False.",
                         action='store_true')
+    parser.add_argument('-s', '--hard_start',
+                        help="A datetime string to start the aggregation from. Only members starting on or after this datetime will be processed.",
+                        type=unicode)
+    parser.add_argument('-e', '--hard_end',
+                        help="A datetime string to end the aggregation on. Only members ending before this datetime will be processed.",
+                        type=unicode)
 
     args        = parser.parse_args()
     output_path = str(os.path.realpath(args.output))
@@ -92,6 +101,18 @@ if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
     factor      = abs(args.factor)
     glob_string = args.glob_string
     ncml_file   = os.path.realpath(args.ncml_file)
+
+    hard_start = None
+    if args.hard_start:
+        hard_start = parse(args.hard_start)
+        if hard_start.tzinfo is None:
+            hard_start = hard_start.replace(tzinfo=pytz.utc)
+
+    hard_end = None
+    if args.hard_end:
+        hard_end = parse(args.hard_end)
+        if hard_end.tzinfo is None:
+            hard_end = hard_end.replace(tzinfo=pytz.utc)
 
     if delta == 'day':
         delta = relativedelta(days=factor)
@@ -102,4 +123,4 @@ if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
     elif delta == 'year':
         delta = relativedelta(years=factor)
 
-    main(output_path=output_path, delta=delta, ncml_file=ncml_file, glob_string=glob_string, apply_to_members=args.apply_to_members)
+    main(output_path=output_path, delta=delta, ncml_file=ncml_file, glob_string=glob_string, apply_to_members=args.apply_to_members, hard_start=hard_start, hard_end=hard_end)

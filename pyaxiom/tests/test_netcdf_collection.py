@@ -146,6 +146,28 @@ class NetcdfCollectionTestFromNcml(unittest.TestCase):
         self.assertEquals(second_day.starting, datetime(2014, 7, 19, 0, 0, tzinfo=pytz.utc))
         self.assertEquals(second_day.ending, datetime(2014, 7, 20, 0, 0, tzinfo=pytz.utc))
 
+    def test_hard_start(self):
+        starting = self.c.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0, day=1)
+        hard_start = datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc)
+        bins = self.c.bins(delta=relativedelta(months=+1), starting=starting, hard_start=hard_start)
+        self.assertEquals(len(bins), 1)
+
+        second_month = bins[0]
+        self.assertEquals(len(second_month.members), 4)
+        self.assertEquals(second_month.starting, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEquals(second_month.ending, datetime(2014, 8, 1, 0, 0, tzinfo=pytz.utc))
+
+    def test_hard_end(self):
+        starting = self.c.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0, day=1)
+        hard_end = datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc)
+        bins = self.c.bins(delta=relativedelta(months=+1), starting=starting, hard_end=hard_end)
+        self.assertEquals(len(bins), 1)
+
+        first_month = bins[0]
+        self.assertEquals(len(first_month.members), 10)
+        self.assertEquals(first_month.starting, datetime(2014, 6, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEquals(first_month.ending, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
+
     def test_combine(self):
         output_file = os.path.join(os.path.dirname(__file__), "resources/coamps_combined_.nc")
         members = [ m.path for m in self.c.aggregation.members ]

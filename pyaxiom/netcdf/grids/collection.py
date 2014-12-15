@@ -154,7 +154,7 @@ class Collection(object):
     def __init__(self, aggregation):
         self.aggregation = aggregation
 
-    def bins(self, delta, starting):
+    def bins(self, delta, starting, hard_start=None, hard_end=None):
         ending = starting + delta
 
         windows = []
@@ -162,6 +162,11 @@ class Collection(object):
         member_length = len(self.aggregation.members)
         last_member = self.aggregation.members[-1]
         index = 0
+
+        if hard_start is None:
+            hard_start = starting
+        if hard_end is None:
+            hard_end = last_member.ending
 
         # Loop until we process the last member of the aggregation
         while last_member.ending >= starting:
@@ -174,9 +179,11 @@ class Collection(object):
                 member = self.aggregation.members[x]
 
                 if member.starting >= starting and member.ending < ending:
-                    # The simplest case... completely part of this aggregation
-                    window.members.append(member)
-                    index += 1
+                    if member.starting >= hard_start and member.ending <= hard_end:
+                        # The simplest case... completely part of this aggregation
+                        # and within the specified 'hard' bounds
+                        window.members.append(member)
+                        index += 1
 
                 elif member.starting >= ending:
                     # This member is outside of the current window and we need to make
