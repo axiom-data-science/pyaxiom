@@ -1,3 +1,5 @@
+#! python
+
 import os
 import sys
 import argparse
@@ -53,7 +55,7 @@ def main(output_path, delta, ncml_file=None, glob_string=None):
 
         Collection.combine(members=window.members, output_file=output_file)
 
-if __name__ == "__main__":
+if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-o', '--output',

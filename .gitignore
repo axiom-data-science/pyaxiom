@@ -2,4 +2,5 @@
 output/*
 *.sublime-*
 *.swp
-
+build/*
+*.egg-info*

@@ -38,6 +38,11 @@ setup(
     install_requires    = reqs,
     tests_require       = ['pytest'],
     cmdclass            = {'test': PyTest},
+    entry_points        = {
+        'console_scripts' : [
+            'binner=pyaxiom.netcdf.grids.binner'
+        ],
+    },
     classifiers         = [
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
