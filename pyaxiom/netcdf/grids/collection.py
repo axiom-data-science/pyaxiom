@@ -2,8 +2,14 @@
 # coding=utf-8
 
 import os
+import tempfile
+import operator
+from glob import glob
 
+import pytz
 import pyncml
+import netCDF4
+import numpy as np
 
 import logging
 logger = logging.getLogger("pyaxiom")
@@ -53,6 +59,72 @@ class Collection(object):
             return cls(pyncml.scan(ncml))
         except BaseException:
             logger.exception("Could not load Collection from Directory.")
+
+    @classmethod
+    def from_glob(cls, glob_string, timevar_name='time', ncml=None):
+        dataset_name      = None
+        dataset_starting  = None
+        dataset_ending    = None
+        dataset_variables = []
+        dataset_members   = []
+
+        files = glob(glob_string)
+        logger.info("Processing aggregation containing {!s} files".format(len(files)))
+        for i, filepath in enumerate(files):
+            logger.info("Processing member ({0}/{1}) - {2} ".format(i+1, len(files), filepath))
+            nc = None
+            try:
+                if ncml is not None:
+                    # Apply NcML
+                    tmp_f, tmp_fp = tempfile.mkstemp(prefix="nc")
+                    os.close(tmp_f)
+                    nc = pyncml.apply(filepath, ncml, output_file=tmp_fp)
+                else:
+                    nc = netCDF4.Dataset(filepath)
+
+                if dataset_name is None:
+                    dataset_name = getattr(nc, 'name', getattr(nc, 'title', None))
+
+                timevar = nc.variables.get(timevar_name)
+                if timevar is None:
+                    logger.error("Time variable '{0}' was not found in file '{1}'. Skipping.".format(timevar_name, filepath))
+                    continue
+
+                # Start/Stop of NetCDF file
+                starting  = netCDF4.num2date(np.min(timevar[:]), units=timevar.units)
+                ending    = netCDF4.num2date(np.max(timevar[:]), units=timevar.units)
+                variables = filter(None, [ nc.variables[v].standard_name if hasattr(nc.variables[v], 'standard_name') else None for v in nc.variables.keys() ])
+
+                dataset_variables = list(set(dataset_variables + variables))
+
+                if starting.tzinfo is None:
+                    starting = starting.replace(tzinfo=pytz.utc)
+                if ending.tzinfo is None:
+                    ending = ending.replace(tzinfo=pytz.utc)
+                if dataset_starting is None or starting < dataset_starting:
+                    dataset_starting = starting
+                if dataset_ending is None or ending > dataset_ending:
+                    dataset_ending = ending
+
+                member = pyncml.DotDict(path=filepath, standard_names=variables, starting=starting, ending=ending)
+                dataset_members.append(member)
+            except BaseException:
+                logger.exception("Something went wrong with {0}".format(filepath))
+                continue
+            finally:
+                nc.close()
+                try:
+                    os.remove(tmp_fp)
+                except (OSError, UnboundLocalError):
+                    pass
+
+        dataset_members = sorted(dataset_members, key=operator.attrgetter('starting'))
+        return cls(pyncml.DotDict(name=dataset_name,
+                                  timevar_name=timevar_name,
+                                  starting=dataset_starting,
+                                  ending=dataset_ending,
+                                  standard_names=dataset_variables,
+                                  members=dataset_members))
 
     @classmethod
     def combine(self, members, output_file, dimension=None, start_index=None, stop_index=None, stride=None):
@@ -126,6 +198,3 @@ class Collection(object):
             ending = ending + delta
 
         return windows
-
-    def combine_ncml(self):
-        pass

@@ -30,6 +30,45 @@ class NetcdfCollectionTestFromDirectory(unittest.TestCase):
         self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
 
 
+class NetcdfCollectionTestFromGlob(unittest.TestCase):
+
+    def setUp(self):
+        glob_string = os.path.join(os.path.dirname(__file__), "resources/coamps/cencoos_4km/wnd_tru/10m/*.nc")
+        self.c = Collection.from_glob(glob_string)
+
+    def test_name(self):
+        self.assertEquals(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
+
+    def test_members(self):
+        self.assertEquals(len(self.c.aggregation.members), 14)
+
+    def test_time(self):
+        self.assertEquals(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
+
+
+class NetcdfCollectionTestFromNestedGlobAndNcml(unittest.TestCase):
+
+    def setUp(self):
+        glob_string = os.path.join(os.path.dirname(__file__), "resources/coamps/cencoos_4km/wnd_tru/**/*.nc")
+        ncml        = """<?xml version="1.0" encoding="UTF-8"?>
+        <netcdf xmlns="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2">
+            <attribute name="title" value="changed" />
+        </netcdf>
+        """
+        self.c = Collection.from_glob(glob_string, ncml=ncml)
+
+    def test_name(self):
+        self.assertEquals(self.c.aggregation.name, "changed")
+
+    def test_members(self):
+        self.assertEquals(len(self.c.aggregation.members), 14)
+
+    def test_time(self):
+        self.assertEquals(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
+
+
 class NetcdfCollectionTestFromNcml(unittest.TestCase):
 
     def setUp(self):

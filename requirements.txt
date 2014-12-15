@@ -1,3 +1,6 @@
+numpy
 pyncml
+pytz
 nco
 python-dateutil
+netCDF4
