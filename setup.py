@@ -40,7 +40,7 @@ setup(
     cmdclass            = {'test': PyTest},
     entry_points        = {
         'console_scripts' : [
-            'binner=pyaxiom.netcdf.grids.binner'
+            'binner=pyaxiom.netcdf.grids.binner:run'
         ],
     },
     classifiers         = [

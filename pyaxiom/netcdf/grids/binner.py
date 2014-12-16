@@ -59,7 +59,9 @@ def main(output_path, delta, ncml_file=None, glob_string=None, apply_to_members=
         Collection.combine(members=window.members, output_file=output_file)
 
     return 0
-if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
+
+
+def run():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-o', '--output',
@@ -125,3 +127,7 @@ if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
         delta = relativedelta(years=factor)
 
     return main(output_path=output_path, delta=delta, ncml_file=ncml_file, glob_string=glob_string, apply_to_members=args.apply_to_members, hard_start=hard_start, hard_end=hard_end)
+
+
+if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
+    run()
