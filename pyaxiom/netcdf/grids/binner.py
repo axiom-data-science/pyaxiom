@@ -104,7 +104,10 @@ def run():
     delta       = args.delta
     factor      = abs(args.factor)
     glob_string = args.glob_string
-    ncml_file   = os.path.realpath(args.ncml_file)
+
+    ncml_file = args.ncml_file
+    if ncml_file is not None:
+        ncml_file   = os.path.realpath(ncml_file)
 
     hard_start = None
     if args.hard_start:
