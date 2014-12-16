@@ -130,5 +130,5 @@ def run():
     return main(output_path=output_path, delta=delta, ncml_file=ncml_file, glob_string=glob_string, apply_to_members=args.apply_to_members, hard_start=hard_start, hard_end=hard_end)
 
 
-if __name__ in ['pyaxiom.netcdf.grids.binner', '__main__']:
+if __name__ == '__main__':
     run()
