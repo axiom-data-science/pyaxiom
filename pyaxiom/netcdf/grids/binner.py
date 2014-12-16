@@ -18,9 +18,9 @@ ch.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(message)s')
 ch.setFormatter(formatter)
 
-logger = logging.getLogger("pyaxiom")
-logger.setLevel(logging.INFO)
-logger.addHandler(ch)
+pyaxiomlogger = logging.getLogger("pyaxiom")
+pyaxiomlogger.setLevel(logging.INFO)
+pyaxiomlogger.addHandler(ch)
 
 logger = logging.getLogger("pyncml")
 logger.setLevel(logging.INFO)
@@ -46,7 +46,7 @@ def main(output_path, delta, ncml_file=None, glob_string=None, apply_to_members=
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    for window in windows:
+    for i, window in enumerate(windows):
         # Create a file name
         starting = window.starting.strftime("%Y%m%dT%H%M")
         ending   = window.ending.strftime("%Y%m%dT%H%M")
@@ -56,6 +56,7 @@ def main(output_path, delta, ncml_file=None, glob_string=None, apply_to_members=
             file_name = "{0}_TO_{1}.nc".format(starting, ending)
         output_file = os.path.join(output_path, file_name)
 
+        pyaxiomlogger.info("Combining ({0}/{1}) - {3} files into {1}".format(i+1, len(windows), len(window.members), output_file))
         Collection.combine(members=window.members, output_file=output_file)
 
     return 0
