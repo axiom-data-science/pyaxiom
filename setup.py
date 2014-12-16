@@ -4,7 +4,7 @@ import sys
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
-version = "0.0.2-dev"
+version = "0.0.3"
 
 
 def readme():
