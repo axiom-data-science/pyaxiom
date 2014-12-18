@@ -139,8 +139,9 @@ class Collection(object):
             # A member DotDoct was passed in, we only need the paths
             members = [ m.path for m in members ]
 
-        options  = ['-4']
-        options += ['-L', '3']
+        options  = ['-4']  # NetCDF4
+        options += ['-L', '3']  # Level 3 compression
+        options += ['-h']  # Don't append to the history global attribute
         if dimension is not None:
             if start_index is None:
                 start_index = 0
