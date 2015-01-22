@@ -4,14 +4,14 @@ import sys
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
-version = "0.0.4-dev"
+from pyaxiom import __version__
 
 
 def readme():
     with open('README.md') as f:
         return f.read()
 
-reqs = [line.strip() for line in open('requirements.txt')]
+reqs = [line.strip() for line in open('requirements.txt') if not line.startswith('#')]
 
 
 class PyTest(TestCommand):
@@ -27,13 +27,13 @@ class PyTest(TestCommand):
 
 setup(
     name                = "pyaxiom",
-    version             = version,
-    description         = "A library to manage various Axiom assets using Python",
+    version             = __version__,
+    description         = "An ocean data toolkit developed and used by Axiom Data Science",
     long_description    = readme(),
     license             = 'LGPLv3',
     author              = "Kyle Wilcox",
-    author_email        = "kyle@axiomalaska.com",
-    url                 = "https://git.axiom/axiom/pyaxiom",
+    author_email        = "kyle@axiomdatascience.com",
+    url                 = "https://github.com/axiom-data-science/pyaxiom",
     packages            = find_packages(),
     install_requires    = reqs,
     tests_require       = ['pytest'],

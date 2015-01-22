@@ -1,12 +1,12 @@
 # pyaxiom
 
-A general helper library for using python at Axiom
+An ocean data toolkit developed and used by Axiom Data Science
 
 
 ## Installation
 
 ```bash
-pip install git+http://git.axiom/axiom/pyaxiom.git
+pip install git+http://github.com/axiom-data-science/pyaxiom.git
 ```
 
 ### Gridded NetCDF Collections
@@ -79,4 +79,47 @@ binner \
   -n pyaxiom/tests/resources/coamps_10km_wind.ncml \
   -d month \
   -f 1
+```
+
+
+### Creating CF1.6 TimeSeries files
+
+###### TimeSeries
+```python
+from pyaxiom.netcdf.sensors import TimeSeries
+filename = 'test_timeseries.nc'
+times = [0, 1000, 2000, 3000, 4000, 5000]
+verticals = None
+ts = TimeSeries(output_directory='./output',
+                latitude=32,   # WGS84
+                longitude=-74, # WGS84
+                station_name='timeseries_station',
+                global_attributes=dict(id='myid'),
+                output_filename='timeseries.nc',
+                times=times,
+                verticals=verticals)
+values = [20, 21, 22, 23, 24, 25]
+attrs = dict(standard_name='sea_water_temperature')
+ts.add_variable('temperature', values=values, attributes=attrs)
+ts.close()
+```
+
+###### TimeSeriesProfile
+```python
+from pyaxiom.netcdf.sensors import TimeSeries
+
+times = [0, 1000, 2000, 3000, 4000, 5000]  # Seconds since Epoch
+verticals = [0, 1, 2]  # Meters down
+ts = TimeSeries(output_directory='./output',
+                latitude=32,   # WGS84
+                longitude=-74, # WGS84
+                station_name='timeseriesprofile_station',
+                global_attributes=dict(id='myid'),
+                output_filename='timeseriesprofile.nc',
+                times=times,
+                verticals=verticals)
+values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals))
+attrs = dict(standard_name='sea_water_temperature')
+ts.add_variable('temperature', values=values, attributes=attrs)
+ts.close()
 ```

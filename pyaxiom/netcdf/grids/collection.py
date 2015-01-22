@@ -7,9 +7,14 @@ import operator
 from glob import glob
 
 import pytz
-import pyncml
+try:
+    import pyncml
+except ImportError:
+    raise ImportError("You must install the 'pyncml' library to use this functionality.")
+
 import netCDF4
 import numpy as np
+from pyaxiom.utils import DotDict
 
 import logging
 logger = logging.getLogger("pyaxiom")
@@ -19,16 +24,6 @@ try:
     from nco import Nco
 except ImportError:
     logger.warning("NCO not found.  The NCO python bindings are required to use 'Collection.combine'.")
-
-
-class DotDict(object):
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    def __repr__(self):
-        import pprint
-        return pprint.pformat(vars(self), indent=2)
 
 
 class Collection(object):
@@ -106,7 +101,7 @@ class Collection(object):
                 if dataset_ending is None or ending > dataset_ending:
                     dataset_ending = ending
 
-                member = pyncml.DotDict(path=filepath, standard_names=variables, starting=starting, ending=ending)
+                member = DotDict(path=filepath, standard_names=variables, starting=starting, ending=ending)
                 dataset_members.append(member)
             except BaseException:
                 logger.exception("Something went wrong with {0}".format(filepath))
@@ -119,7 +114,7 @@ class Collection(object):
                     pass
 
         dataset_members = sorted(dataset_members, key=operator.attrgetter('starting'))
-        return cls(pyncml.DotDict(name=dataset_name,
+        return cls(DotDict(name=dataset_name,
                                   timevar_name=timevar_name,
                                   starting=dataset_starting,
                                   ending=dataset_ending,

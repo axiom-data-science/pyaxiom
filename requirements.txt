@@ -1,6 +1,8 @@
 numpy
-pyncml
 pytz
-nco
 python-dateutil
 netCDF4
+
+#Optional
+#nco
+#pyncml

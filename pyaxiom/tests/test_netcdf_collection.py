@@ -9,8 +9,9 @@ import pytz
 from pyaxiom.netcdf.grids import Collection
 
 import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger()
+from pyaxiom import logger
+logger.level = logging.INFO
+logger.addHandler(logging.StreamHandler())
 
 
 class NetcdfCollectionTestFromDirectory(unittest.TestCase):
