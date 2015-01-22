@@ -5,9 +5,13 @@ An ocean data toolkit developed and used by Axiom Data Science
 
 ## Installation
 
-```bash
-pip install git+http://github.com/axiom-data-science/pyaxiom.git
-```
+##### Stable
+
+    pip install pyaxiom
+
+##### Development
+
+    pip install git+https://github.com/axiom-data-science/pyaxiom.git
 
 ### Gridded NetCDF Collections
 
