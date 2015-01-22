@@ -175,6 +175,8 @@ class TimeSeries(object):
         var.grid_mapping = 'crs'
         var[:] = used_values
 
+        return var
+
     def setup_times_and_verticals(self, times, verticals, vertical_fill=None):
 
         if vertical_fill is None:
