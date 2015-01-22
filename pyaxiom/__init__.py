@@ -10,5 +10,5 @@ except ImportError:
     class NullHandler(logging.Handler):
         def emit(self, record):
             pass
-logger = logging.getLogger("pytools")
+logger = logging.getLogger("pyaxiom")
 logger.addHandler(logging.NullHandler())
