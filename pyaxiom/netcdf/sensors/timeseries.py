@@ -180,9 +180,8 @@ class TimeSeries(object):
         if vertical_fill is None:
             vertical_fill = -9999.9
 
-        if not verticals:
+        if not isinstance(verticals, np.ndarray) and not verticals:
             verticals = np.ma.masked_values([vertical_fill], vertical_fill)
-
         if isinstance(times, (list, tuple,)):
             times = np.asarray(times)
         if isinstance(verticals, (list, tuple,)):
