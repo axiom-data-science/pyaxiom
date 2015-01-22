@@ -23,7 +23,7 @@ class TimeSeries(object):
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        out_file = os.path.join(output_directory, output_filename)
+        out_file = os.path.abspath(os.path.join(output_directory, output_filename))
         logger.info("Creating file at '{}'".format(out_file))
         self.nc = netCDF4.Dataset(out_file, 'w')
         self.time = None
