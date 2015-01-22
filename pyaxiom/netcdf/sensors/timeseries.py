@@ -259,6 +259,10 @@ class TimeSeries(object):
         self.z.axis          = "Z"
         self.z[:] = unique_verticals
 
+    @property
+    def ncd(self):
+        return self.nc
+
     def close(self):
         try:
             self.nc.close()
