@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import netCDF4
 
-from pyaxiom.netcdf.sensors.create import TimeSeries
+from pyaxiom.netcdf.sensors import TimeSeries
 
 import logging
 from pyaxiom import logger
