@@ -191,8 +191,6 @@ class TimeSeries(object):
 
     def setup_times_and_verticals(self, times, verticals):
 
-
-
         if not isinstance(verticals, np.ndarray) and not verticals:
             verticals = np.ma.masked_values([self.vertical_fill], self.vertical_fill)
         if isinstance(times, (list, tuple,)):
