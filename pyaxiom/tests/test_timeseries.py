@@ -8,7 +8,7 @@ from pyaxiom.netcdf.sensors import TimeSeries
 
 import logging
 from pyaxiom import logger
-logger.level = logging.DEBUG
+logger.level = logging.INFO
 logger.addHandler(logging.StreamHandler())
 
 
@@ -46,6 +46,36 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('temperature').size == len(times)
         assert (nc.variables.get('temperature')[:] == np.asarray(values)).all()
 
+    def test_timeseries_extra_values(self):
+        """
+        This will map directly to the time variable and ignore any time indexes
+        that are not found.  The 'times' parameter to add_variable should be
+        the same length as the values parameter.
+        """
+        filename = 'test_timeseries_extra_values.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = None
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=self.global_attributes,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals)
+
+        values = [20, 21, 22, 23, 24, 25, 26, 27, 28]
+        value_times = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000]
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs, times=value_times)
+        ts.close()
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+        assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('temperature').size == len(times)
+        assert (nc.variables.get('temperature')[:] == np.asarray(values[0:6])).all()
+
     def test_timeseries_profile(self):
         filename = 'test_timeseries_profile.nc'
         times = [0, 1000, 2000, 3000, 4000, 5000]
@@ -70,6 +100,39 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('height').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
+
+    def test_timeseries_profile_extra_values(self):
+        """
+        This will map directly to the time variable and ignore any time indexes
+        that are not found.  The 'times' parameter to add_variable should be
+        the same length as the values parameter.
+        """
+        filename = 'test_timeseries_profile_extra_values.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = [0, 1, 2]
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=self.global_attributes,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals)
+
+        values = np.repeat([20, 21, 22, 23, 24, 25, 26, 27, 28], len(verticals))
+        new_times = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000]
+        values_times = np.repeat(new_times, len(verticals))
+        values_verticals = np.repeat(verticals, len(new_times))
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs, times=values_times, verticals=values_verticals)
+        ts.close()
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+        assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('height').size == len(verticals)
+        assert nc.variables.get('temperature').size == len(times) * len(verticals)
+        assert (nc.variables.get('temperature')[:] == np.repeat([20, 21, 22, 23, 24, 25], len(verticals)).reshape((len(times), len(verticals)))).all()
 
     def test_timeseries_profile_duplicate_heights(self):
         filename = 'test_timeseries_profile_duplicate_heights.nc'

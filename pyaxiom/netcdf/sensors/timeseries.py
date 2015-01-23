@@ -79,13 +79,21 @@ class TimeSeries(object):
         platform.short_name     = global_attributes.get("title", station_name)
         platform.long_name      = global_attributes.get("description", station_name)
 
-        self.setup_times_and_verticals(times, verticals, vertical_fill=vertical_fill)
+        if vertical_fill is None:
+            vertical_fill = -9999.9
+        self.vertical_fill      = vertical_fill
+        self.vertical_axis_name = 'height'
+        self.time_axis_name     = 'time'
+
+        self.setup_times_and_verticals(times, verticals)
 
     def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None):
 
-        if times and isinstance(times, (list, tuple,)):
+        if isinstance(values, (list, tuple,)) and values:
+            values = np.asarray(values)
+        if isinstance(times, (list, tuple,)) and times:
             times = np.asarray(times)
-        if verticals and isinstance(verticals, (list, tuple,)):
+        if isinstance(verticals, (list, tuple,)) and verticals:
             verticals = np.asarray(verticals)
 
         # Set vertical datum on the CRS variable
@@ -120,32 +128,36 @@ class TimeSeries(object):
                     # falty index here and try to save the values as is.
                     pass
         except ValueError:
-            raise
             if self.z.size > 1:
-                # Try removing the null heights first.
-                try:
-                    used_values = np.ma.reshape(values, (self.time.size, self.z[:].compressed().size, ))
-                    raise ValueError("The size of the Z variable would need to be changed when adding this new variable. Old size: {!s}  New size: {!s}".format(self.z.size, self.z[:].compressed().size))
-                except ValueError:
-                    if times is not None and verticals is not None:
-                        # Hmmm, we have two actual height values for this station.
-                        # Not cool man, not cool.
-                        # Reindex the entire values array.  This is slow.
-                        indexed = ((bisect.bisect_left(self.time[:], times[i]), bisect.bisect_left(self.z[:], verticals[i]), values[i]) for i in xrange(values.size))
-                        used_values = np.ndarray((self.time.size, self.z.size, ), dtype=np.float64)
-                        used_values.fill(float(fillvalue))
-                        for (tzi, zzi, vz) in indexed:
+                if times is not None and verticals is not None:
+                    # Hmmm, we have two actual height values for this station.
+                    # Not cool man, not cool.
+                    # Reindex the entire values array.  This is slow.
+                    indexed = ((bisect.bisect_left(self.time[:], times[i]), bisect.bisect_left(self.z[:], verticals[i]), values[i]) for i in xrange(values.size))
+                    used_values = np.ndarray((self.time.size, self.z.size, ), dtype=np.float64)
+                    used_values.fill(float(fillvalue))
+                    for (tzi, zzi, vz) in indexed:
+                        if zzi < self.z.size and tzi < self.time.size:
                             used_values[tzi, zzi] = vz
-                    else:
-                        raise
+                else:
+                    raise ValueError("You need to pass in both 'times' and 'verticals' parameters that matches the size of the 'values' parameter.")
             else:
-                raise
+                if times is not None:
+                    # Ugh, find the time indexes manually
+                    indexed = ((bisect.bisect_left(self.time[:], times[i]), values[i]) for i in xrange(values.size))
+                    used_values = np.ndarray((self.time.size, ), dtype=np.float64)
+                    used_values.fill(float(fillvalue))
+                    for (tzi, vz) in indexed:
+                        if tzi < self.time.size:
+                            used_values[tzi] = vz
+                else:
+                    raise ValueError("You need to pass in a 'times' parameter that matches the size of the 'values' parameter.")
 
         logger.info("Setting values for {}...".format(variable_name))
         if len(used_values.shape) == 1:
             var = self.nc.createVariable(variable_name,    "f8", ("time",), fill_value=fillvalue, chunksizes=(1000,), zlib=True)
             if self.z.size == 1:
-                var.coordinates = "time height latitude longitude"
+                var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
             else:
                 # This is probably a bottom sensor on an ADCP or something, don't add the height coordinate
                 var.coordinates = "time latitude longitude"
@@ -163,7 +175,7 @@ class TimeSeries(object):
 
         elif len(used_values.shape) == 2:
             var = self.nc.createVariable(variable_name,    "f8", ("time", "z",), fill_value=fillvalue, chunksizes=(1000, self.z.size,), zlib=True)
-            var.coordinates = "time height latitude longitude"
+            var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
         else:
             raise ValueError("Could not create variable.  Shape of data is {!s}.  Expected a dimension of 1 or 2, not {!s}.".format(used_values.shape, len(used_values.shape)))
         # Set the variable attributes as passed in
@@ -177,21 +189,23 @@ class TimeSeries(object):
 
         return var
 
-    def setup_times_and_verticals(self, times, verticals, vertical_fill=None):
+    def setup_times_and_verticals(self, times, verticals):
 
-        if vertical_fill is None:
-            vertical_fill = -9999.9
+
 
         if not isinstance(verticals, np.ndarray) and not verticals:
-            verticals = np.ma.masked_values([vertical_fill], vertical_fill)
+            verticals = np.ma.masked_values([self.vertical_fill], self.vertical_fill)
         if isinstance(times, (list, tuple,)):
             times = np.asarray(times)
         if isinstance(verticals, (list, tuple,)):
-            verticals = np.ma.masked_values(verticals, vertical_fill)
+            verticals = np.ma.masked_values(verticals, self.vertical_fill)
 
-        # Get unique time and verticals (the data used for the each variable)
-        unique_times, self.time_indexes = np.unique(times, return_index=True)
+        # Don't unique Time... rely on the person submitting the data correctly.
+        # That means we allow duplicate times, as long as the data contains duplicate times as well.
+        self.time_indexes = np.argsort(times)
+        unique_times = times[self.time_indexes]
 
+        # Unique the vertical values
         if verticals is not None and verticals.any():
             unique_verticals, self.vertical_indexes = np.ma.unique(verticals, return_index=True)
         else:
@@ -216,14 +230,14 @@ class TimeSeries(object):
 
         # Time - 32-bit unsigned integer
         self.nc.createDimension("time")
-        self.time = self.nc.createVariable("time",    "f8", ("time",), chunksizes=(1000,))
+        self.time = self.nc.createVariable(self.time_axis_name,    "f8", ("time",), chunksizes=(1000,))
         self.time.units          = "seconds since 1970-01-01T00:00:00Z"
         self.time.standard_name  = "time"
         self.time.long_name      = "time of measurement"
         self.time.calendar       = "gregorian"
         self.time[:] = unique_times
 
-        logger.debug("Setting up height...")
+        logger.debug("Setting up {}...".format(self.vertical_axis_name))
         # Figure out if we are creating a Profile or just a TimeSeries
         if unique_verticals.size <= 1:
             # TIMESERIES
@@ -234,7 +248,7 @@ class TimeSeries(object):
                 self.nc.setncattr("geospatial_vertical_positive", "down")
                 self.nc.setncattr("geospatial_vertical_min",      unique_verticals[0])
                 self.nc.setncattr("geospatial_vertical_max",      unique_verticals[0])
-            self.z = self.nc.createVariable("height",     "f8", fill_value=vertical_fill)
+            self.z = self.nc.createVariable(self.vertical_axis_name,     "f8", fill_value=self.vertical_fill)
 
         elif unique_verticals.size > 1:
             # TIMESERIES PROFILE
@@ -249,11 +263,11 @@ class TimeSeries(object):
             self.nc.setncattr("geospatial_vertical_resolution", " ".join(map(unicode, list(vertical_diffs))))
             # There is more than one vertical value for this variable, we need to create a vertical dimension
             self.nc.createDimension("z", unique_verticals.size)
-            self.z = self.nc.createVariable("height",     "f8", ("z", ), fill_value=vertical_fill)
+            self.z = self.nc.createVariable(self.vertical_axis_name,     "f8", ("z", ), fill_value=self.vertical_fill)
 
         self.z.grid_mapping  = 'crs'
-        self.z.long_name     = "height of the sensor relative to the water surface"
-        self.z.standard_name = "height"
+        self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)
+        self.z.standard_name = self.vertical_axis_name
         self.z.positive      = "down"
         self.z.units         = "m"
         self.z.axis          = "Z"
