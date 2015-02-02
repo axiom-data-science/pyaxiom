@@ -120,11 +120,11 @@ class Collection(object):
 
         dataset_members = sorted(dataset_members, key=operator.attrgetter('starting'))
         return cls(DotDict(name=dataset_name,
-                                  timevar_name=timevar_name,
-                                  starting=dataset_starting,
-                                  ending=dataset_ending,
-                                  standard_names=dataset_variables,
-                                  members=dataset_members))
+                           timevar_name=timevar_name,
+                           starting=dataset_starting,
+                           ending=dataset_ending,
+                           standard_names=dataset_variables,
+                           members=dataset_members))
 
     @classmethod
     def combine(self, members, output_file, dimension=None, start_index=None, stop_index=None, stride=None):
