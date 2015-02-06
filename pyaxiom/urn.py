@@ -51,7 +51,7 @@ class IoosUrn(object):
             z += ':{}'.format(self.component)
         if self.version is not None:
             z += ':{}'.format(self.version)
-        return z
+        return z.lower()
 
     def valid(self):
         ASSET_TYPES = ['station', 'network', 'sensor', 'survey']
