@@ -18,7 +18,7 @@ ch.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(message)s')
 ch.setFormatter(formatter)
 
-pyaxiomlogger = logging.getLogger("pyaxiom")
+from pyaxiom import logger as pyaxiomlogger
 pyaxiomlogger.setLevel(logging.INFO)
 pyaxiomlogger.addHandler(ch)
 

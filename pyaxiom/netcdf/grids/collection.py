@@ -16,9 +16,7 @@ import netCDF4
 import numpy as np
 from pyaxiom.utils import DotDict
 
-import logging
-logger = logging.getLogger("pyaxiom")
-logger.addHandler(logging.NullHandler())
+from pyaxiom import logger
 
 try:
     from nco import Nco
