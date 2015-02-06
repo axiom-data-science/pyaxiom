@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from pyaxiom.utils import EnhancedDataset
+from pyaxiom.netcdf.dataset import EnhancedDataset
 
 import logging
 from pyaxiom import logger
