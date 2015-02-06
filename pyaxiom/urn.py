@@ -5,6 +5,7 @@ from pyaxiom import logger
 
 
 class IoosUrn(object):
+    """ https://geo-ide.noaa.gov/wiki/index.php?title=IOOS_Conventions_for_Observing_Asset_Identifiers """
 
     def __init__(self, *args, **kwargs):
 
