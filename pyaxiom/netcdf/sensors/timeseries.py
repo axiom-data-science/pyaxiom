@@ -217,7 +217,10 @@ class TimeSeries(object):
         unique_times = times[self.time_indexes]
 
         # Unique the vertical values
-        if verticals is not None and verticals.any():
+        # Special case for all zeros.  Added here for greater readability.
+        if np.isclose(verticals, 0).all():
+            unique_verticals, self.vertical_indexes = np.ma.unique(verticals, return_index=True)
+        elif verticals is not None and verticals.any():
             unique_verticals, self.vertical_indexes = np.ma.unique(verticals, return_index=True)
         else:
             unique_verticals = verticals
