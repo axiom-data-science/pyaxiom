@@ -293,3 +293,41 @@ class TimeSeries(object):
             self.nc.close()
         except:
             pass
+
+
+def get_dataframe_from_variable(nc, data_var):
+    """ Returns a Pandas DataFrame of the data """
+    time_var = nc.get_variables_by_attributes(standard_name='time')[0]
+    try:
+        depth_var = nc.get_variables_by_attributes(standard_name='height')[0]
+    except IndexError:
+        try:
+            depth_var = nc.get_variables_by_attributes(standard_name='depth')[0]
+        except IndexError:
+            try:
+                depth_var = nc.get_variables_by_attributes(standard_name='surface_altitude')[0]
+            except IndexError:
+                # No depth variable
+                depth_var = None
+
+    times  = netCDF4.num2date(time_var[:], units=time_var.units)
+    original_times_size = times.size
+
+    if depth_var is None:
+        depths = np.asarray([np.nan] * len(times)).flatten()
+        values = data_var[:].flatten()
+    else:
+        depths = depth_var[:]
+        if len(data_var.shape) > 1:
+            times = np.repeat(times, depths.size)
+            depths = np.tile(depths, original_times_size)
+            values = data_var[:, :].flatten()
+        else:
+            values = data_var[:].flatten()
+
+    df = pd.DataFrame({ 'time':   times,
+                        'value':  values,
+                        'unit':   data_var.units,
+                        'depth':  depths })
+    df = df.set_index([pd.DatetimeIndex(df['time']), pd.Float64Index(df['depth'])])
+    return df
