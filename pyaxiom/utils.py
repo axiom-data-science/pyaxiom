@@ -1,8 +1,12 @@
 #!python
 # coding=utf-8
 
+import random
+import string
+
 from pyaxiom.urn import IoosUrn
 from pyaxiom import logger
+
 
 class DotDict(object):
     def __init__(self, *args, **kwargs):
@@ -28,9 +32,13 @@ def urnify(naming_authority, station_identifier, data_variable):
     if hasattr(data_variable, 'vertical_datum') and data_variable.vertical_datum:
         extras.append('vertical_datum={0}'.format(data_variable.vertical_datum))
 
-    variable_name = data_variable.name
     if hasattr(data_variable, 'standard_name') and data_variable.standard_name:
         variable_name = data_variable.standard_name
+    elif hasattr(data_variable, 'name'):
+        variable_name = getattr(data_variable, 'name')
+    else:
+        variable_name = ''.join(random.choice(string.ascii_uppercase) for _ in range(8)).lower()
+        logger.warning("Had to randomly generate a variable name: {0}".format(variable_name))
 
     if extras:
         variable_name = '{0}#{1}'.format(variable_name, ';'.join(extras))
