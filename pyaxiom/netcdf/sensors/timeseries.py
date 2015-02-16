@@ -88,6 +88,11 @@ class TimeSeries(object):
 
         self.setup_times_and_verticals(times, verticals)
 
+    def add_instrument_metadata(self, urn):
+        instrument = self.nc.createVariable("instrument", "i4")
+        instrument.definition = "http://mmisw.org/ont/ioos/definition/sensorID"
+        instrument.long_name = urn
+
     def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None, raise_on_error=False):
 
         if isinstance(values, (list, tuple,)) and values:
