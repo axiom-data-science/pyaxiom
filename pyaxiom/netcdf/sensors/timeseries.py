@@ -239,8 +239,9 @@ class TimeSeries(object):
         # subtract adjacent times to produce an array of differences, then get the most common occurance
         diffs = unique_times[1:] - unique_times[:-1]
         uniqs, inverse = np.unique(diffs, return_inverse=True)
-        time_diffs = diffs[np.bincount(inverse).argmax()]
-        self.nc.setncattr("time_coverage_resolution", "P%sS" % unicode(int(round(time_diffs))))
+        if uniqs.size > 1:
+            time_diffs = diffs[np.bincount(inverse).argmax()]
+            self.nc.setncattr("time_coverage_resolution", "P%sS" % unicode(int(round(time_diffs))))
 
         # Time - 32-bit unsigned integer
         self.nc.createDimension("time")
