@@ -67,7 +67,6 @@ class TimeSeries(object):
             os.makedirs(output_directory)
 
         out_file = os.path.abspath(os.path.join(output_directory, output_filename))
-        logger.info("Creating file at '{}'".format(out_file))
         self.nc = netCDF4.Dataset(out_file, 'w')
         self.time = None
 
@@ -130,6 +129,7 @@ class TimeSeries(object):
         self.time_axis_name     = 'time'
 
         self.setup_times_and_verticals(times, verticals)
+        logger.info("Created file at '{}'".format(out_file))
 
     def add_instrument_metadata(self, urn):
         instrument = self.nc.createVariable("instrument", "i4")
