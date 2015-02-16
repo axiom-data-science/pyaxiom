@@ -287,6 +287,7 @@ class TimeSeries(object):
         self.z.units         = "m"
         self.z.axis          = "Z"
         self.z[:] = unique_verticals
+        self.nc.sync()
 
     @property
     def ncd(self):
