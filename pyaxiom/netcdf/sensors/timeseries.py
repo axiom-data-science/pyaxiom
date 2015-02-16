@@ -78,6 +78,7 @@ class TimeSeries(object):
         platform.ioos_code      = station_name
         platform.short_name     = global_attributes.get("title", station_name)
         platform.long_name      = global_attributes.get("description", station_name)
+        platform.definition     = "http://mmisw.org/ont/ioos/definition/stationID"
 
         if vertical_fill is None:
             vertical_fill = -9999.9
