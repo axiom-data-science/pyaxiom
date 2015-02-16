@@ -87,7 +87,7 @@ class TimeSeries(object):
 
         self.setup_times_and_verticals(times, verticals)
 
-    def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None):
+    def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None, raise_on_error=False):
 
         if isinstance(values, (list, tuple,)) and values:
             values = np.asarray(values)
@@ -128,6 +128,11 @@ class TimeSeries(object):
                     # falty index here and try to save the values as is.
                     pass
         except ValueError:
+            if raise_on_error is True:
+                self.close()
+                raise
+            else:
+                logger.exception("Could not do a simple reshape of data, trying to match manually! Time:{!s}, Heights:{!s}, Values:{!s}".format(self.time.size, self.z.size, values.size))
             if self.z.size > 1:
                 if times is not None and verticals is not None:
                     # Hmmm, we have two actual height values for this station.
@@ -140,6 +145,7 @@ class TimeSeries(object):
                         if zzi < self.z.size and tzi < self.time.size:
                             used_values[tzi, zzi] = vz
                 else:
+                    self.close()
                     raise ValueError("You need to pass in both 'times' and 'verticals' parameters that matches the size of the 'values' parameter.")
             else:
                 if times is not None:
@@ -151,6 +157,7 @@ class TimeSeries(object):
                         if tzi < self.time.size:
                             used_values[tzi] = vz
                 else:
+                    self.close()
                     raise ValueError("You need to pass in a 'times' parameter that matches the size of the 'values' parameter.")
 
         logger.info("Setting values for {}...".format(variable_name))
