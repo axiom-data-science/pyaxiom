@@ -24,3 +24,10 @@ class EnhancedDataset(Dataset):
                 vs.append(self.variables[vname])
 
         return vs
+
+    def close(self):
+        try:
+            self.sync()
+            self.close()
+        except RuntimeError:
+            pass
