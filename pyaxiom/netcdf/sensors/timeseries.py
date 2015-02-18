@@ -273,7 +273,6 @@ class TimeSeries(object):
             save_mask = verticals.mask
             verticals.mask = False
             unique_verticals, self.vertical_indexes = np.ma.unique(verticals, return_index=True)
-            unique_verticals.mask = save_mask[self.vertical_indexes]
             if save_mask.size > 1:
                 unique_verticals.mask = save_mask[self.vertical_indexes]
         elif verticals is not None and verticals.any():
