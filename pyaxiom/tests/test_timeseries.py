@@ -188,7 +188,8 @@ class TestTimeSeries(unittest.TestCase):
     def test_timeseries_profile_fill_value_in_z(self):
         filename = 'test_timeseries_profile_fill_value_in_z.nc'
         times = [0, 1000, 2000, 3000, 4000, 5000]
-        verticals = [0, self.fillvalue]
+        # Vertical fills MUST be at the BEGINNING of the array!!!!
+        verticals = [self.fillvalue, 0]
         ts = TimeSeries(output_directory=self.output_directory,
                         latitude=self.latitude,
                         longitude=self.longitude,
@@ -198,7 +199,7 @@ class TestTimeSeries(unittest.TestCase):
                         times=times,
                         verticals=verticals)
 
-        values = [20, self.fillvalue, 21, self.fillvalue, 22, self.fillvalue, 23, self.fillvalue, 24, self.fillvalue, 25, self.fillvalue]
+        values = [self.fillvalue, 20, self.fillvalue, 21, self.fillvalue, 22, self.fillvalue, 23, self.fillvalue, 24, self.fillvalue, 25]
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs, fillvalue=self.fillvalue)
         ts.close()
@@ -209,23 +210,23 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('height').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
 
-        assert nc.variables.get('temperature')[:][0][0] == 20
-        assert nc.variables.get('temperature')[:].mask[0][1] == True
+        assert nc.variables.get('temperature')[:][0][1] == 20
+        assert nc.variables.get('temperature')[:].mask[0][0] == True
 
-        assert nc.variables.get('temperature')[:][1][0] == 21
-        assert nc.variables.get('temperature')[:].mask[1][1] == True
+        assert nc.variables.get('temperature')[:][1][1] == 21
+        assert nc.variables.get('temperature')[:].mask[1][0] == True
 
-        assert nc.variables.get('temperature')[:][2][0] == 22
-        assert nc.variables.get('temperature')[:].mask[2][1] == True
+        assert nc.variables.get('temperature')[:][2][1] == 22
+        assert nc.variables.get('temperature')[:].mask[2][0] == True
 
-        assert nc.variables.get('temperature')[:][3][0] == 23
-        assert nc.variables.get('temperature')[:].mask[3][1] == True
+        assert nc.variables.get('temperature')[:][3][1] == 23
+        assert nc.variables.get('temperature')[:].mask[3][0] == True
 
-        assert nc.variables.get('temperature')[:][4][0] == 24
-        assert nc.variables.get('temperature')[:].mask[4][1] == True
+        assert nc.variables.get('temperature')[:][4][1] == 24
+        assert nc.variables.get('temperature')[:].mask[4][0] == True
 
-        assert nc.variables.get('temperature')[:][5][0] == 25
-        assert nc.variables.get('temperature')[:].mask[5][1] == True
+        assert nc.variables.get('temperature')[:][5][1] == 25
+        assert nc.variables.get('temperature')[:].mask[5][0] == True
 
         assert (nc.variables.get('temperature')[:] == np.asarray(values).reshape((len(times), len(verticals)))).all()
 

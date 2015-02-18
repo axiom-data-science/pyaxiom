@@ -247,11 +247,15 @@ class TimeSeries(object):
 
     def setup_times_and_verticals(self, times, verticals):
 
-        if not isinstance(verticals, np.ndarray) and not verticals:
-            verticals = np.ma.masked_values([self.vertical_fill], self.vertical_fill)
         if isinstance(times, (list, tuple,)):
             times = np.asarray(times)
-        if isinstance(verticals, (list, tuple,)):
+
+        # If nothing is passed in, set to the vertical_fill value.
+        if not isinstance(verticals, np.ndarray) and not verticals:
+            verticals = np.ma.masked_values([self.vertical_fill], self.vertical_fill)
+
+        # Convert to masked array
+        if isinstance(verticals, (list, tuple,)) or isinstance(verticals, np.ndarray):
             verticals = np.ma.masked_values(verticals, self.vertical_fill)
 
         # Don't unique Time... rely on the person submitting the data correctly.
@@ -262,9 +266,18 @@ class TimeSeries(object):
         # Unique the vertical values
         # Special case for all zeros.  Added here for greater readability.
         if np.isclose(verticals, 0).all():
+            save_mask = verticals.mask
+            verticals.mask = False
             unique_verticals, self.vertical_indexes = np.ma.unique(verticals, return_index=True)
+            unique_verticals.mask = save_mask[self.vertical_indexes]
+            if save_mask.size > 1:
+                unique_verticals.mask = save_mask[self.vertical_indexes]
         elif verticals is not None and verticals.any():
+            save_mask = verticals.mask
+            verticals.mask = False
             unique_verticals, self.vertical_indexes = np.ma.unique(verticals, return_index=True)
+            if save_mask.size > 1:
+                unique_verticals.mask = save_mask[self.vertical_indexes]
         else:
             unique_verticals = verticals
             self.vertical_indexes = np.arange(len(verticals))
