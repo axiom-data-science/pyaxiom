@@ -238,8 +238,11 @@ class TimeSeries(object):
         # Set the variable attributes as passed in
         if attributes:
             for k, v in attributes.iteritems():
-                if k != '_FillValue':
-                    setattr(var, k, v)
+                if k != '_FillValue' and v is not None:
+                    try:
+                        setattr(var, k, v)
+                    except BaseException:
+                        logger.info('Could not add attribute {}: {}, skipping.'.format(k, v))
 
         var.grid_mapping = 'crs'
         var[:] = used_values
