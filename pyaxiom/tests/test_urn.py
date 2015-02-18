@@ -1,6 +1,12 @@
+#!python
+# coding=utf-8
+
+import os
 import unittest
 
 from pyaxiom.urn import IoosUrn
+from pyaxiom.utils import urnify
+from pyaxiom.netcdf.sensors import TimeSeries
 
 import logging
 from pyaxiom import logger
@@ -75,3 +81,85 @@ class IoosUrnTests(unittest.TestCase):
     def test_from_long_string(self):
         u = IoosUrn.from_string('urn:ioos:sensor:whatami:wow:i:have:lots:of:things')
         assert u.urn == 'urn:ioos:sensor:whatami:wow:i:have'
+
+
+class TestUrnUtils(unittest.TestCase):
+
+    def setUp(self):
+        self.output_directory = os.path.join(os.path.dirname(__file__), "output")
+        self.latitude = 34
+        self.longitude = -72
+        self.station_name = "PytoolsTestStation"
+        self.global_attributes = dict(id='this.is.the.id')
+        self.fillvalue = -9999.9
+
+    def test_from_dict(self):
+
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount'
+
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                 vertical_datum='NAVD88')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#vertical_datum=navd88'
+
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                 cell_methods='time: sum (interval: PT24H) time: mean')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:sum;interval=pt24h'
+
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                 cell_methods='time: minimum within years time: mean over years')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean_over_years,time:minimum_within_years'
+
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                 cell_methods='time: variance (interval: PT1H comment: sampled instantaneously)')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:variance;interval=pt1h'
+
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                 cell_methods='time: variance time: mean (interval: PT1H comment: sampled instantaneously)')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
+
+    def test_from_variable(self):
+
+        filename = 'test_urn_from_variable.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = None
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=self.global_attributes,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals)
+
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                     vertical_datum='NAVD88')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+        ts.ncd.sync()
+        urn = urnify('axiom', 'foo', ts.ncd.variables['temperature'])
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#vertical_datum=navd88'
+
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                     cell_methods='time: variance (interval: PT1H comment: sampled instantaneously)')
+        ts.add_variable('temperature2', values=values, attributes=attrs)
+        ts.ncd.sync()
+        urn = urnify('axiom', 'foo', ts.ncd.variables['temperature2'])
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:variance;interval=pt1h'
+
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                     cell_methods='time: variance time: mean (interval: PT1H comment: sampled instantaneously)')
+        ts.add_variable('temperature3', values=values, attributes=attrs)
+        ts.ncd.sync()
+        urn = urnify('axiom', 'foo', ts.ncd.variables['temperature3'])
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
+
+        ts.close()
