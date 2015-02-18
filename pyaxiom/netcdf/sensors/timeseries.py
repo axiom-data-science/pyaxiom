@@ -135,6 +135,7 @@ class TimeSeries(object):
         instrument = self.nc.createVariable("instrument", "i4")
         instrument.definition = "http://mmisw.org/ont/ioos/definition/sensorID"
         instrument.long_name = urn
+        instrument.ioos_code = urn
 
     def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None, raise_on_error=False):
 
