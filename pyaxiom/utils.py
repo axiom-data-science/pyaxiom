@@ -25,6 +25,10 @@ def dictify_urn(urn):
     if ioos_urn.valid() is False:
         return dict()
 
+    if ioos_urn.asset_type != 'sensor':
+        logger.error("This function only works on 'sensor' URNs.")
+        return dict()
+
     if '#' in ioos_urn.component:
         standard_name, extras = ioos_urn.component.split('#')
     else:
@@ -32,15 +36,16 @@ def dictify_urn(urn):
         extras = ''
     d = dict(standard_name=standard_name)
 
-    intervals = []
-    for section in extras.split(';'):
-        key, values = section.split('=')
-        if key == 'interval':
-            # special case, intervals should be appended to the cell_methods
-            for v in values.split(','):
-                intervals.append(v)
-        else:
-            d[key] = ' '.join([x.replace('_', ' ').replace(':', ': ') for x in values.split(',')])
+    if extras:
+        intervals = []
+        for section in extras.split(';'):
+            key, values = section.split('=')
+            if key == 'interval':
+                # special case, intervals should be appended to the cell_methods
+                for v in values.split(','):
+                    intervals.append(v)
+            else:
+                d[key] = ' '.join([x.replace('_', ' ').replace(':', ': ') for x in values.split(',')])
 
     if 'cell_methods' in d and intervals:
         for i in intervals:

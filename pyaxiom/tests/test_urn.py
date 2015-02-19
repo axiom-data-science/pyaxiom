@@ -204,7 +204,7 @@ class TestUrnUtils(unittest.TestCase):
         assert d['vertical_datum'] == 'NAVD88'
         assert 'cell_methods' not in d
 
-        urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount'
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount'
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert 'cell_methods' not in d
