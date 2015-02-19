@@ -82,6 +82,17 @@ class IoosUrnTests(unittest.TestCase):
         u = IoosUrn.from_string('urn:ioos:sensor:whatami:wow:i:have:lots:of:things')
         assert u.urn == 'urn:ioos:sensor:whatami:wow:i:have'
 
+    def test_change_sensor_to_station(self):
+        u = IoosUrn.from_string('urn:ioos:sensor:myauthority:mylabel:mycomponent')
+        assert u.asset_type == 'sensor'
+        assert u.authority  == 'myauthority'
+        assert u.label      == 'mylabel'
+        assert u.component  == 'mycomponent'
+
+        u.asset_type = 'station'
+        u.component = None
+        assert u.urn == 'urn:ioos:station:myauthority:mylabel'
+
 
 class TestUrnUtils(unittest.TestCase):
 
