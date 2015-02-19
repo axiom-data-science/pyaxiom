@@ -20,7 +20,12 @@ class IoosUrn(object):
 
     @staticmethod
     def from_string(urn_string):
-        parts = urn_string.split(":")
+        complete = urn_string.split('#')
+        extras = ''
+        if len(complete) > 1:
+            extras = '#{0}'.format(complete[1])
+        parts = complete[0].split(':')
+
         if len(parts) < 5:
             return IoosUrn()
         urn            = IoosUrn()
@@ -32,10 +37,10 @@ class IoosUrn(object):
                 urn.version = parts[5]
             elif len(parts) > 6:
                 # Also a verion specified, so this has to be the component
-                urn.component = parts[5]
+                urn.component = parts[5] + extras
             else:
-                logger.info("Assuming that {0} is the 'component' piece of the URN (not the 'version')".format(parts[5]))
-                urn.component = parts[5]
+                logger.info("Assuming that {0} is the 'component' piece of the URN (not the 'version')".format(parts[5] + extras))
+                urn.component = parts[5] + extras
         if len(parts) > 6:
             urn.version = parts[6]
         if len(parts) > 7:

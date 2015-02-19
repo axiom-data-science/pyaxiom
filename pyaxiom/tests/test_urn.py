@@ -93,6 +93,13 @@ class IoosUrnTests(unittest.TestCase):
         u.component = None
         assert u.urn == 'urn:ioos:station:myauthority:mylabel'
 
+    def test_messy_urn(self):
+        u = IoosUrn.from_string('urn:ioos:sensor:myauthority:mylabel:standard_name#key=key1:value1,key2:value2;some_other_key=some_other_value')
+        assert u.asset_type == 'sensor'
+        assert u.authority  == 'myauthority'
+        assert u.label      == 'mylabel'
+        assert u.component  == 'standard_name#key=key1:value1,key2:value2;some_other_key=some_other_value'
+
 
 class TestUrnUtils(unittest.TestCase):
 
