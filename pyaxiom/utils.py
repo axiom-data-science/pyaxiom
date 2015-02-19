@@ -68,7 +68,7 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
         for group, members in itertools.groupby(pairs, lambda x: x[0]):
             if group == 'interval':
                 intervals = [m[1] for m in members]
-            elif group in ['time', 'area']:
+            elif group in ['time', 'area']:  # Ignore 'comments'. May need to add more things here...
                 member_strings = []
                 for m in members:
                     member_strings.append('{}:{}'.format(group, m[1]))
