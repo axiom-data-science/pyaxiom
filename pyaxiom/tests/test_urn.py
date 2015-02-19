@@ -5,7 +5,7 @@ import os
 import unittest
 
 from pyaxiom.urn import IoosUrn
-from pyaxiom.utils import urnify
+from pyaxiom.utils import urnify, dictify_urn
 from pyaxiom.netcdf.sensors import TimeSeries
 
 import logging
@@ -163,3 +163,30 @@ class TestUrnUtils(unittest.TestCase):
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
 
         ts.close()
+
+    def test_dict_from_urn(self):
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
+        d = dictify_urn(urn)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: mean time: variance (interval: PT1H)'
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:variance;interval=pt1h'
+        d = dictify_urn(urn)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: variance (interval: PT1H)'
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean_over_years,time:minimum_within_years'
+        d = dictify_urn(urn)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: mean over years time: minimum within years'
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#vertical_datum=navd88'
+        d = dictify_urn(urn)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['vertical_datum'] == 'NAVD88'
+        assert 'cell_methods' not in d
+
+        urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount'
+        d = dictify_urn(urn)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert 'cell_methods' not in d

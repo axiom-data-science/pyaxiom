@@ -19,6 +19,39 @@ class DotDict(object):
         return pprint.pformat(vars(self), indent=2)
 
 
+def dictify_urn(urn):
+    ioos_urn = IoosUrn.from_string(urn)
+
+    if ioos_urn.valid() is False:
+        return dict()
+
+    if '#' in ioos_urn.component:
+        standard_name, extras = ioos_urn.component.split('#')
+    else:
+        standard_name = ioos_urn.component
+        extras = ''
+    d = dict(standard_name=standard_name)
+
+    intervals = []
+    for section in extras.split(';'):
+        key, values = section.split('=')
+        if key == 'interval':
+            # special case, intervals should be appended to the cell_methods
+            for v in values.split(','):
+                intervals.append(v)
+        else:
+            d[key] = ' '.join([x.replace('_', ' ').replace(':', ': ') for x in values.split(',')])
+
+    if 'cell_methods' in d and intervals:
+        for i in intervals:
+            d['cell_methods'] += ' (interval: {0})'.format(i.upper())
+
+    if 'vertical_datum' in d:
+        d['vertical_datum'] = d['vertical_datum'].upper()
+
+    return d
+
+
 def urnify(naming_authority, station_identifier, data):
 
     if isinstance(data, dict):
