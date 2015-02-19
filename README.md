@@ -13,6 +13,124 @@ An ocean data toolkit developed and used by Axiom Data Science
 
     pip install git+https://github.com/axiom-data-science/pyaxiom.git
 
+
+### Enhanced `netcdf4-python` Dataset object
+
+A subclass of the `netCDF4.Dataset` object that adds some additional features
+
+###### Safe closing
+Vanilla `netCDF4.Dataset` objects raise a RuntimeError when trying to close
+an already closed file.  This won't raise.
+
+
+```python
+from netCDF4 import Dataset
+
+nc = Dataset('http://thredds45.pvd.axiomalaska.com/thredds/dodsC/grabbag/USGS_CMG_WH_OBS/WFAL/9001rcm-a.nc')
+nc.close()
+nc.close()
+---------------------------------------------------------------------------
+RuntimeError                              Traceback (most recent call last)
+<ipython-input-18-db44c06d8538> in <module>()
+----> 1 nc.close()
+/home/kwilcox/.virtualenvs/overlord/lib/python2.7/site-packages/netCDF4.so in netCDF4.Dataset.close (netCDF4.c:23432)()
+RuntimeError: NetCDF: Not a valid ID
+
+from pyaxiom.netcdf.dataset import EnhancedDataset as Dataset
+nc = Dataset('http://thredds45.pvd.axiomalaska.com/thredds/dodsC/grabbag/USGS_CMG_WH_OBS/WFAL/9001rcm-a.nc')
+nc.close()
+nc.close()
+```
+
+###### Retrieving variables by attributes and values/callables
+```python
+from pyaxiom.netcdf.dataset import EnhancedDataset as Dataset
+nc = Dataset('http://thredds45.pvd.axiomalaska.com/thredds/dodsC/grabbag/USGS_CMG_WH_OBS/WFAL/9001rcm-a.nc')
+
+# Return variables with a standard_name attribute equal to 'latitude'
+print nc.get_variables_by_attributes(standard_name='latitude')
+[<type 'netCDF4.Variable'>
+float64 latitude()
+    units: degrees_north
+    standard_name: latitude
+    long_name: sensor latitude
+unlimited dimensions: 
+current shape = ()
+filling off
+]
+
+# Return all variables with a 'standard_name attribute'
+variables = nc.get_variables_by_attributes(standard_name=lambda v: v is not None)
+print [s.name for s in variables]
+[u'latitude', u'longitude', u'depth', u'T_28', u'CS_300', u'CD_310', u'u_1205', u'v_1206', u'O_60', u'DO', u'time']
+
+# Get creative... return all variablse with the attribute units equal to m/s and a grid_mapping attribute
+variables = nc.get_variables_by_attributes(grid_mapping=lambda v: v is not None, units='m/s')
+print [s.name for s in variables]
+[u'CS_300', u'u_1205', u'v_1206']
+```
+
+
+
+
+
+### IOOS URNs
+[More Information](https://geo-ide.noaa.gov/wiki/index.php?title=IOOS_Conventions_for_Observing_Asset_Identifiers)
+
+###### URN Normalization
+
+```python
+from pyaxiom.urn import IoosUrn
+u = IoosUrn(asset_type='station', authority='axiom', label='station1')
+print u.__dict__
+{'asset_type': 'station',
+ 'authority': 'axiom',
+ 'component': None,
+ 'label': 'station1',
+ 'version': None}
+print u.urn
+'urn:ioos:station:axiom:station1'
+```
+
+```python
+from pyaxiom.urn import IoosUrn
+u = IoosUrn.from_string('urn:ioos:station:axiom:station1')
+print u.__dict__
+{'asset_type': 'station',
+ 'authority': 'axiom',
+ 'component': None,
+ 'label': 'station1',
+ 'version': None}
+print u.urn
+'urn:ioos:station:axiom:station1'
+```
+
+###### NetCDF Integration
+
+```python
+from pyaxiom.utils import urnify, dictify_urn
+
+# NetCDF variable attributes from a "sensor" urn
+print dictify_urn('urn:ioos:sensor:axiom:station1')
+{'standard_name': 'wind_speed'}
+
+print dictify_urn('urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h')
+{'standard_name': 'lwe_thickness_of_precipitation_amount',
+ 'cell_methods': 'time: mean time: variance (interval: PT1H)'}
+
+# URN from `dict` of variable attributes
+attributes = {'standard_name': 'wind_speed',
+              'cell_methods': 'time: mean (interval: PT24H)'}
+print urnify('authority', 'label', attributes)
+'urn:ioos:sensor:authority:label:wind_speed#cell_methods=time:mean;interval=pt24h'
+
+# URN from a `netCDF4` Variable object
+nc = netCDF4.Dataset('http://thredds45.pvd.axiomalaska.com/thredds/dodsC/grabbag/USGS_CMG_WH_OBS/WFAL/9001rcm-a.nc')
+print urnify('authority', 'label', nc.variables['T_28'])
+'urn:ioos:sensor:authority:label:sea_water_temperature'
+```
+
+
 ### Gridded NetCDF Collections
 
 #### Binning files
@@ -126,4 +244,42 @@ values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals))
 attrs = dict(standard_name='sea_water_temperature')
 ts.add_variable('temperature', values=values, attributes=attrs)
 ts.close()
+```
+
+###### Pandas Integration
+
+Pandas integration assumes that there is a Series column `time` and a Series
+column `depth` in your DataFrame.  Data values are pulled from a column named
+'value', but you may also pass in the `data_column` attribute for more control.
+
+```python
+from pyaxiom.netcdf.sensors import TimeSeries
+df = pd.DataFrame({ 'time':   [0, 1, 2, 3, 4, 5, 6],
+                    'value':  [10, 20, 30, 40, 50, 60],
+                    'depth':  [0, 0, 0, 0, 0, 0] })
+TimeSeries.from_dataframe(df,
+                          output_directory='./output',
+                          latitude=30,   # WGS84
+                          longitude=-74, # WGS84
+                          station_name='dataframe_station',
+                          global_attributes=dict(id='myid'),
+                          variable_name='values',
+                          variable_attributes=dict(),
+                          output_filename='from_dataframe.nc')
+```
+
+```python
+df = pd.DataFrame({ 'time':   [0, 1, 2, 3, 4, 5, 6],
+                    'temperature':  [10, 20, 30, 40, 50, 60],
+                    'depth':  [0, 0, 0, 0, 0, 0] })
+TimeSeries.from_dataframe(df,
+                          output_directory='./output',
+                          latitude=30,   # WGS84
+                          longitude=-74, # WGS84
+                          station_name='dataframe_station',
+                          global_attributes=dict(id='myid'),
+                          output_filename='from_dataframe.nc',
+                          variable_name='temperature',
+                          variable_attributes=dict(standard_name='air_temperature'),
+                          data_column='temperature')
 ```
