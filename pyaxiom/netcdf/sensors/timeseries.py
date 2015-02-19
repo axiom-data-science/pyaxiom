@@ -25,35 +25,36 @@ class TimeSeries(object):
 
         df[data_column] = df[data_column].fillna(fillvalue)
         times = np.asarray([ calendar.timegm(x.utctimetuple()) for x in df['time'] ])
+        df['depth'] = df['depth'].fillna(fillvalue)
         depths = df['depth'].values
         try:
-            ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename)
+            ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue)
             ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
         except ValueError:
             logger.warning("Failed first attempt, trying again with unique times.")
             try:
                 # Try uniquing time
                 newtimes  = np.unique(times)
-                ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=depths, output_filename=output_filename)
+                ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue)
                 ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
             except ValueError:
                 logger.warning("Failed second attempt, trying again with unique depths.")
                 try:
                     # Try uniquing depths
                     newdepths = np.unique(df['depth'].values)
-                    ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=newdepths, output_filename=output_filename)
+                    ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue)
                     ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
                 except ValueError:
                     logger.warning("Failed third attempt, uniquing time and depth.")
                     try:
                         # Unique both time and depth
                         newdepths = np.unique(df['depth'].values)
-                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=newdepths, output_filename=output_filename)
+                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue)
                         ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
                     except ValueError:
                         logger.warning("Failed fourth attempt, manually matching indexes (this is slow).")
                         # Manually match
-                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename)
+                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue)
                         ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, times=times, verticals=depths, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=False)
         return ts
 
