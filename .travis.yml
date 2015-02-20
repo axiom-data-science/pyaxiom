@@ -15,8 +15,9 @@ before_install:
 
   # Create the basic testing environment
   # ------------------------------------
-  - conda config --set always_yes yes --set changeps1 no --add create_default_packages pip
+  - conda config --set always_yes yes --set changeps1 no
   - conda config --set show_channel_urls True
+  - conda config --add create_default_packages pip
   - conda update --quiet conda
   - ENV_NAME='test-environment'
   - conda create --quiet -n $ENV_NAME python=$TRAVIS_PYTHON_VERSION
@@ -29,4 +30,5 @@ install:
   - conda install pytest
   - pip install nco
   - pip install pyncml
+  - conda list --export
 script: py.test -v
