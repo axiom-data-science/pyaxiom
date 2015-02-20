@@ -15,7 +15,7 @@ before_install:
 
   # Create the basic testing environment
   # ------------------------------------
-  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set always_yes yes --set changeps1 no --add create_default_packages pip
   - conda config --set show_channel_urls True
   - conda update --quiet conda
   - ENV_NAME='test-environment'
@@ -26,7 +26,7 @@ install:
   # Customise the testing environment
   # ---------------------------------
   - conda install --channel https://conda.binstar.org/rsignell --file requirements.txt
-  - conda install nco
-  - conda install pyncml
   - conda install pytest
+  - pip install nco
+  - pip install pyncml
 script: py.test -v
