@@ -1,6 +1,6 @@
-# pyaxiom
+# pyaxiom  [![Build Status](https://travis-ci.org/axiom-data-science/pyaxiom.svg)](https://travis-ci.org/axiom-data-science/pyaxiom)
 
-An ocean data toolkit developed and used by Axiom Data Science
+An ocean data toolkit developed and used by [Axiom Data Science](http://axiomdatascience.com)
 
 
 ## Installation
