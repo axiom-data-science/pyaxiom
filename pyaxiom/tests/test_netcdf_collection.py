@@ -1,6 +1,7 @@
 import os
 
 import unittest
+import tempfile
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
@@ -170,27 +171,28 @@ class NetcdfCollectionTestFromNcml(unittest.TestCase):
         self.assertEquals(first_month.ending, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
 
     def test_combine(self):
-        output_file = os.path.join(os.path.dirname(__file__), "resources/coamps_combined_.nc")
+        output_file = tempfile.NamedTemporaryFile().name
         members = [ m.path for m in self.c.aggregation.members ]
         Collection.combine(members=members, output_file=output_file)
         self.assertTrue(os.path.isfile(output_file))
         os.remove(output_file)
 
     def test_combine_passing_members(self):
-        output_file = os.path.join(os.path.dirname(__file__), "resources/coamps_combined_.nc")
+        output_file = tempfile.NamedTemporaryFile().name
         Collection.combine(members=self.c.aggregation.members, output_file=output_file)
         self.assertTrue(os.path.isfile(output_file))
         os.remove(output_file)
 
     def test_combine_with_dimension(self):
-        output_file = os.path.join(os.path.dirname(__file__), "resources/coamps_combined.nc")
+        output_file = tempfile.NamedTemporaryFile().name
+        print output_file
         members = [ m.path for m in self.c.aggregation.members ]
         Collection.combine(members=members, output_file=output_file, dimension='time')
         self.assertTrue(os.path.isfile(output_file))
         os.remove(output_file)
 
     def test_combine_with_dimension_and_stride(self):
-        output_file = os.path.join(os.path.dirname(__file__), "resources/coamps_combined.nc")
+        output_file = tempfile.NamedTemporaryFile().name
         members = [ m.path for m in self.c.aggregation.members ]
         Collection.combine(members=members, output_file=output_file, dimension='time', start_index=1, stop_index=6, stride=2)
         self.assertTrue(os.path.isfile(output_file))

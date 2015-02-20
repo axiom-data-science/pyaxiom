@@ -35,4 +35,5 @@ install:
   - pip install nco
   - pip install pyncml
   - conda list --export
+  - pip freeze
 script: py.test -v
