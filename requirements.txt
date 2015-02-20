@@ -2,6 +2,7 @@ numpy
 pytz
 python-dateutil
 netCDF4
+pandas
 
 #Optional
 #nco
