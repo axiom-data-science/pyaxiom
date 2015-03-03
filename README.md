@@ -54,7 +54,7 @@ float64 latitude()
     units: degrees_north
     standard_name: latitude
     long_name: sensor latitude
-unlimited dimensions: 
+unlimited dimensions:
 current shape = ()
 filling off
 ]
@@ -144,7 +144,8 @@ overlap in time or files that have data on both sides of a bin boundary.
 
 ```
 usage: binner [-h] -o OUTPUT -d {day,month,week,year} [-f [FACTOR]]
-                 [-n [NCML_FILE]] [-g [GLOB_STRING]] [-a]
+              [-n [NCML_FILE]] [-g [GLOB_STRING]] [-a] [-s HARD_START]
+              [-e HARD_END]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -170,7 +171,14 @@ optional arguments:
   -a, --apply_to_members
                         Flag to apply the NcML to each member of the
                         aggregation before extracting metadata. Ignored if
-                        using a 'glob_string'. Defaults to False
+                        using a 'glob_string'. Defaults to False.
+  -s HARD_START, --hard_start HARD_START
+                        A datetime string to start the aggregation from. Only
+                        members starting on or after this datetime will be
+                        processed.
+  -e HARD_END, --hard_end HARD_END
+                        A datetime string to end the aggregation on. Only
+                        members ending before this datetime will be processed.
 ```
 
 ##### Examples
