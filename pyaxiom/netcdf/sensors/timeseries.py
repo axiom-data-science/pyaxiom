@@ -138,6 +138,22 @@ class TimeSeries(object):
         instrument.long_name = urn
         instrument.ioos_code = urn
 
+    def add_time_bounds(self, delta=None, position=None):
+        self.nc.createDimension("bounds")
+        time_bounds = self.nc.createVariable('{}_bounds'.format(self.time_axis_name), "f8", ("time", "bounds",), chunksizes=(1000, 2,))
+        time_bounds.units    = "seconds since 1970-01-01T00:00:00Z"
+        time_bounds.calendar = "gregorian"
+
+        time_objs = netCDF4.num2date(self.time[:], units=self.time.units, calendar=self.time.calendar)
+        bounds_kwargs = dict(units=time_bounds.units, calendar=time_bounds.calendar)
+
+        if position == "start":
+            time_bounds[:] = np.asarray(zip(self.time[:], netCDF4.date2num(time_objs + delta, **bounds_kwargs)))
+        elif position == "middle":
+            time_bounds[:] = np.asarray(zip(netCDF4.date2num(time_objs - delta/2, **bounds_kwargs), netCDF4.date2num(time_objs + delta/2, **bounds_kwargs)))
+        elif position == "end":
+            time_bounds[:] = np.asarray(zip(netCDF4.date2num(time_objs - delta, **bounds_kwargs), self.time[:]))
+
     def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None, raise_on_error=False):
 
         if isinstance(values, (list, tuple,)) and values:

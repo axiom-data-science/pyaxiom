@@ -1,5 +1,6 @@
 import os
 import unittest
+from datetime import timedelta
 
 import numpy as np
 import netCDF4
@@ -330,3 +331,84 @@ class TestTimeSeries(unittest.TestCase):
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
         assert (nc.variables.get('salinity')[:] == values.reshape((len(times), len(verticals)))).all()
         assert nc.variables.get('dissolved_oxygen')[:].mask.all()
+
+
+class TestTimeseriesTimeBounds(unittest.TestCase):
+
+    def setUp(self):
+        self.output_directory = os.path.join(os.path.dirname(__file__), "output")
+        self.latitude = 34
+        self.longitude = -72
+        self.station_name = "PytoolsTestStation"
+        self.global_attributes = dict(id='this.is.the.id')
+
+        self.filename = 'test_timeseries_bounds.nc'
+        self.times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = [0]
+        self.ts = TimeSeries(output_directory=self.output_directory,
+                             latitude=self.latitude,
+                             longitude=self.longitude,
+                             station_name=self.station_name,
+                             global_attributes=self.global_attributes,
+                             output_filename=self.filename,
+                             times=self.times,
+                             verticals=verticals)
+
+        self.values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='sea_water_temperature')
+        self.ts.add_variable('temperature', values=self.values, attributes=attrs)
+
+    def tearDown(self):
+        self.ts.close()
+        os.remove(os.path.join(self.output_directory, self.filename))
+
+    def test_time_bounds_start(self):
+        delta = timedelta(seconds=1000)
+        self.ts.add_time_bounds(delta=delta, position='start')
+        self.ts.close()
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, self.filename))
+        assert nc.variables.get('time_bounds').shape == (len(self.times), 2,)
+        assert (nc.variables.get('time_bounds')[:] == np.asarray([
+                                                                    [0,    1000],
+                                                                    [1000, 2000],
+                                                                    [2000, 3000],
+                                                                    [3000, 4000],
+                                                                    [4000, 5000],
+                                                                    [5000, 6000]
+                                                                ])).all()
+        nc.close()
+
+    def test_time_bounds_middle(self):
+        delta = timedelta(seconds=1000)
+        self.ts.add_time_bounds(delta=delta, position='middle')
+        self.ts.close()
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, self.filename))
+        assert nc.variables.get('time_bounds').shape == (len(self.times), 2,)
+        assert (nc.variables.get('time_bounds')[:] == np.asarray([
+                                                                    [ -500,  500],
+                                                                    [  500, 1500],
+                                                                    [ 1500, 2500],
+                                                                    [ 2500, 3500],
+                                                                    [ 3500, 4500],
+                                                                    [ 4500, 5500]
+                                                                ])).all()
+        nc.close()
+
+    def test_time_bounds_end(self):
+        delta = timedelta(seconds=1000)
+        self.ts.add_time_bounds(delta=delta, position='end')
+        self.ts.close()
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, self.filename))
+        assert nc.variables.get('time_bounds').shape == (len(self.times), 2,)
+        assert (nc.variables.get('time_bounds')[:] == np.asarray([
+                                                                    [-1000,    0],
+                                                                    [    0, 1000],
+                                                                    [ 1000, 2000],
+                                                                    [ 2000, 3000],
+                                                                    [ 3000, 4000],
+                                                                    [ 4000, 5000]
+                                                                ])).all()
+        nc.close()
