@@ -34,7 +34,13 @@ def dictify_urn(urn):
     else:
         standard_name = ioos_urn.component
         extras = ''
+
     d = dict(standard_name=standard_name)
+
+    # Discriminant
+    if '-' in ioos_urn.component:
+        d['discriminant'] = ioos_urn.component.split('-')[-1]
+        d['standard_name'] = ioos_urn.component.split('-')[0]
 
     if extras:
         intervals = []
@@ -66,7 +72,8 @@ def urnify(naming_authority, station_identifier, data):
                  bounds=getattr(data, 'bounds', None),
                  cell_methods=getattr(data, 'cell_methods', None),
                  vertical_datum=getattr(data, 'vertical_datum', None),
-                 name=getattr(data, 'name', None))
+                 name=getattr(data, 'name', None),
+                 discriminant=getattr(data, 'discriminant', None))
         return urnify_from_dict(naming_authority, station_identifier, d)
 
 
@@ -75,6 +82,7 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
     def clean_value(v):
         return v.replace('(', '').replace(')', '').strip().replace(' ', '_')
     extras = []
+    intervals = []  # Because it can be part of cell_methods and its own dict key
 
     if 'cell_methods' in data_dict and data_dict['cell_methods']:
         cm = data_dict['cell_methods']
@@ -101,11 +109,11 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
         pairs = zip(keys, values)
 
         mems = []
-        intervals = []
+        cell_intervals = []
         pairs = sorted(pairs)
         for group, members in itertools.groupby(pairs, lambda x: x[0]):
             if group == 'interval':
-                intervals = [m[1] for m in members]
+                cell_intervals = [m[1] for m in members]
             elif group in ['time', 'area']:  # Ignore 'comments'. May need to add more things here...
                 member_strings = []
                 for m in members:
@@ -113,14 +121,20 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
                 mems.append(','.join(member_strings))
         if mems:
             extras.append('cell_methods={}'.format(','.join(mems)))
-        if intervals:
-            extras.append('interval={}'.format(','.join(intervals)))
+        if cell_intervals:
+            intervals += cell_intervals
 
     if 'bounds' in data_dict and data_dict['bounds']:
         extras.append('bounds={0}'.format(data_dict['bounds']))
 
     if 'vertical_datum' in data_dict and data_dict['vertical_datum']:
         extras.append('vertical_datum={0}'.format(data_dict['vertical_datum']))
+
+    if 'interval' in data_dict and data_dict['interval']:
+        if isinstance(data_dict['interval'], (list, tuple,)):
+            intervals += data_dict['interval']
+        elif isinstance(data_dict['interval'], basestring):
+            intervals += [data_dict['interval']]
 
     if 'standard_name' in data_dict and data_dict['standard_name']:
         variable_name = data_dict['standard_name']
@@ -130,6 +144,13 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
         variable_name = ''.join(random.choice(string.ascii_uppercase) for _ in range(8)).lower()
         logger.warning("Had to randomly generate a variable name: {0}".format(variable_name))
 
+    if 'discriminant' in data_dict and data_dict['discriminant']:
+        variable_name = '{}-{}'.format(variable_name, data_dict['discriminant'])
+
+    if intervals:
+        intervals = list(set(intervals))  # Unique them
+        extras.append('interval={}'.format(','.join(intervals)))
+
     if extras:
         variable_name = '{0}#{1}'.format(variable_name, ';'.join(extras))
 
@@ -138,4 +159,5 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
                 label=station_identifier,
                 component=variable_name,
                 version=None)
+
     return u.urn

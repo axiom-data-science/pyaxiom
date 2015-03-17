@@ -123,7 +123,20 @@ class TestUrnUtils(unittest.TestCase):
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#vertical_datum=navd88'
 
         d = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                 vertical_datum='NAVD88',
+                 discriminant='2')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#vertical_datum=navd88'
+
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount',
                  cell_methods='time: sum (interval: PT24H) time: mean')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:sum;interval=pt24h'
+
+        # Interval as a dict key (not inline with cell_methods)
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                 cell_methods='time: sum time: mean',
+                 interval='pt24h')
         urn = urnify('axiom', 'foo', d)
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:sum;interval=pt24h'
 
@@ -141,6 +154,21 @@ class TestUrnUtils(unittest.TestCase):
                  cell_methods='time: variance time: mean (interval: PT1H comment: sampled instantaneously)')
         urn = urnify('axiom', 'foo', d)
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
+
+        # Interval specified twice
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                 cell_methods='time: variance time: mean (interval: PT1H comment: sampled instantaneously)',
+                 interval='PT1H')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
+
+        # Interval specified twice
+        d = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                 cell_methods='time: variance time: mean (interval: PT1H comment: sampled instantaneously)',
+                 interval='PT1H',
+                 discriminant='2')
+        urn = urnify('axiom', 'foo', d)
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean,time:variance;interval=pt1h'
 
     def test_from_variable(self):
 
@@ -180,6 +208,15 @@ class TestUrnUtils(unittest.TestCase):
         urn = urnify('axiom', 'foo', ts.ncd.variables['temperature3'])
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
 
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='lwe_thickness_of_precipitation_amount',
+                     cell_methods='time: variance time: mean (interval: PT1H comment: sampled instantaneously)',
+                     discriminant='2')
+        ts.add_variable('temperature4', values=values, attributes=attrs)
+        ts.ncd.sync()
+        urn = urnify('axiom', 'foo', ts.ncd.variables['temperature4'])
+        assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean,time:variance;interval=pt1h'
+
         ts.close()
 
     def test_dict_from_urn(self):
@@ -187,24 +224,39 @@ class TestUrnUtils(unittest.TestCase):
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['cell_methods'] == 'time: mean time: variance (interval: PT1H)'
+        assert 'discriminant' not in d
+        assert 'vertical_datum' not in d
 
         urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:variance;interval=pt1h'
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['cell_methods'] == 'time: variance (interval: PT1H)'
+        assert 'discriminant' not in d
+        assert 'vertical_datum' not in d
 
         urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean_over_years,time:minimum_within_years'
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['cell_methods'] == 'time: mean over years time: minimum within years'
+        assert 'discriminant' not in d
+        assert 'vertical_datum' not in d
 
         urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#vertical_datum=navd88'
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['vertical_datum'] == 'NAVD88'
         assert 'cell_methods' not in d
+        assert 'discriminant' not in d
 
         urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount'
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert 'cell_methods' not in d
+        assert 'discriminant' not in d
+        assert 'vertical_datum' not in d
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2'
+        d = dictify_urn(urn)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['discriminant'] == '2'
         assert 'cell_methods' not in d
