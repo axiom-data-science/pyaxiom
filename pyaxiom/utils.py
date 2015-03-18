@@ -19,7 +19,12 @@ class DotDict(object):
         return pprint.pformat(vars(self), indent=2)
 
 
-def dictify_urn(urn):
+def dictify_urn(urn, combine_interval=True):
+    """
+        By default, this will put the `interval` as part of the `cell_methods`
+        attribute (NetCDF CF style). To return `interval` as its own key, use
+        the `combine_interval=False` parameter.
+    """
     ioos_urn = IoosUrn.from_string(urn)
 
     if ioos_urn.valid() is False:
@@ -42,8 +47,9 @@ def dictify_urn(urn):
         d['discriminant'] = ioos_urn.component.split('-')[-1]
         d['standard_name'] = ioos_urn.component.split('-')[0]
 
+    intervals = []
+    cell_methods = []
     if extras:
-        intervals = []
         for section in extras.split(';'):
             key, values = section.split('=')
             if key == 'interval':
@@ -51,11 +57,30 @@ def dictify_urn(urn):
                 for v in values.split(','):
                     intervals.append(v)
             else:
-                d[key] = ' '.join([x.replace('_', ' ').replace(':', ': ') for x in values.split(',')])
+                if key == 'cell_methods':
+                    value = [ x.replace('_', ' ').replace(':', ': ') for x in values.split(',') ]
+                    cell_methods = value
+                else:
+                    value = ' '.join([x.replace('_', ' ').replace(':', ': ') for x in values.split(',')])
+                    d[key] = value
 
-    if 'cell_methods' in d and intervals:
-        for i in intervals:
-            d['cell_methods'] += ' (interval: {0})'.format(i.upper())
+    if combine_interval is True:
+        if cell_methods and intervals:
+            if len(cell_methods) == len(intervals):
+                d['cell_methods'] = ' '.join([ '{} (interval: {})'.format(x[0], x[1].upper()) for x in zip(cell_methods, intervals) ])
+            else:
+                d['cell_methods'] = ' '.join(cell_methods)
+                for i in intervals:
+                    d['cell_methods'] += ' (interval: {})'.format(i.upper())
+        elif cell_methods:
+            d['cell_methods'] = ' '.join(cell_methods)
+            for i in intervals:
+                d['cell_methods'] += ' (interval: {})'.format(i.upper())
+        elif intervals:
+            raise ValueError("An interval without a cell_method is not allowed!  Not possible!")
+    else:
+        d['cell_methods'] = ' '.join(cell_methods)
+        d['interval'] = ','.join(intervals).upper()
 
     if 'vertical_datum' in d:
         d['vertical_datum'] = d['vertical_datum'].upper()

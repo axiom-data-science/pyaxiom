@@ -224,6 +224,31 @@ class TestUrnUtils(unittest.TestCase):
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['cell_methods'] == 'time: mean time: variance (interval: PT1H)'
+        assert 'interval' not in d
+        assert 'discriminant' not in d
+        assert 'vertical_datum' not in d
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
+        d = dictify_urn(urn, combine_interval=False)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: mean time: variance'
+        assert d['interval'] == 'PT1H'
+        assert 'discriminant' not in d
+        assert 'vertical_datum' not in d
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h,pt6h'
+        d = dictify_urn(urn)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: mean (interval: PT1H) time: variance (interval: PT6H)'
+        assert 'interval' not in d
+        assert 'discriminant' not in d
+        assert 'vertical_datum' not in d
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h,pt6h'
+        d = dictify_urn(urn, combine_interval=False)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: mean time: variance'
+        assert d['interval'] == 'PT1H,PT6H'
         assert 'discriminant' not in d
         assert 'vertical_datum' not in d
 
@@ -231,6 +256,15 @@ class TestUrnUtils(unittest.TestCase):
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['cell_methods'] == 'time: variance (interval: PT1H)'
+        assert 'interval' not in d
+        assert 'discriminant' not in d
+        assert 'vertical_datum' not in d
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:variance;interval=pt1h'
+        d = dictify_urn(urn, combine_interval=False)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: variance'
+        assert d['interval'] == 'PT1H'
         assert 'discriminant' not in d
         assert 'vertical_datum' not in d
 
@@ -238,6 +272,7 @@ class TestUrnUtils(unittest.TestCase):
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['cell_methods'] == 'time: mean over years time: minimum within years'
+        assert 'interval' not in d
         assert 'discriminant' not in d
         assert 'vertical_datum' not in d
 
@@ -245,12 +280,14 @@ class TestUrnUtils(unittest.TestCase):
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['vertical_datum'] == 'NAVD88'
+        assert 'interval' not in d
         assert 'cell_methods' not in d
         assert 'discriminant' not in d
 
         urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount'
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert 'interval' not in d
         assert 'cell_methods' not in d
         assert 'discriminant' not in d
         assert 'vertical_datum' not in d
@@ -259,4 +296,10 @@ class TestUrnUtils(unittest.TestCase):
         d = dictify_urn(urn)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['discriminant'] == '2'
+        assert 'interval' not in d
         assert 'cell_methods' not in d
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#interval=pt2h'
+        # Cant have an interval without a cell_method
+        with self.assertRaises(ValueError):
+            d = dictify_urn(urn)
