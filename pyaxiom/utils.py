@@ -98,7 +98,8 @@ def urnify(naming_authority, station_identifier, data):
                  cell_methods=getattr(data, 'cell_methods', None),
                  vertical_datum=getattr(data, 'vertical_datum', None),
                  name=getattr(data, 'name', None),
-                 discriminant=getattr(data, 'discriminant', None))
+                 discriminant=getattr(data, 'discriminant', None),
+                 interval=getattr(data, 'interval', None))
         return urnify_from_dict(naming_authority, station_identifier, d)
 
 
