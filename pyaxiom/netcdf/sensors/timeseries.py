@@ -255,6 +255,16 @@ class TimeSeries(object):
         # Set the variable attributes as passed in
         if attributes:
             for k, v in attributes.iteritems():
+
+                if k == 'vertical_datum' and sensor_vertical_datum is None and v is not None:
+                    # Use this as the vertical datum if it is specified and we didn't already have one
+                    try:
+                        self.crs.geoid_name = v
+                        self.crs.vertical_datum = v
+                        self.crs.water_surface_reference_datum = v
+                    except AttributeError:
+                        pass
+
                 if k != '_FillValue' and v is not None:
                     try:
                         setattr(var, k, v)
