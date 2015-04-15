@@ -126,7 +126,7 @@ class TimeSeries(object):
         if vertical_fill is None:
             vertical_fill = -9999.9
         self.vertical_fill      = vertical_fill
-        self.vertical_axis_name = 'height'
+        self.vertical_axis_name = 'z'
         self.time_axis_name     = 'time'
 
         self.setup_times_and_verticals(times, verticals)
