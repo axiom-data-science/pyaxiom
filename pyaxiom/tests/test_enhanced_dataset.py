@@ -5,7 +5,7 @@ import os
 
 import unittest
 
-from pyaxiom.netcdf import EnhancedDataset
+from pyaxiom.netcdf import EnhancedDataset, EnhancedMFDataset
 
 import logging
 from pyaxiom import logger
@@ -52,6 +52,47 @@ class EnhancedDatasetTests(unittest.TestCase):
 
         vs = self.nc.get_variables_by_attributes(grid_mapping=lambda v: v is not None, long_name='v_component_wind_true_direction_all_geometries @ height_above_ground')
         self.assertEqual(len(vs), 1)
+
+
+class EnhancedMFDatasetTests(unittest.TestCase):
+    def setUp(self):
+        netcdf_files = os.path.join(os.path.dirname(__file__), "resources/coamps/cencoos_4km/wnd_tru/10m/*.nc")
+        self.nc = EnhancedMFDataset(netcdf_files)
+
+    def test_multiple_close(self):
+        """ Closing the Dataset twice should not raise an error """
+        self.nc.close()
+        self.nc.close()
+
+    def test_find_variables_by_single_attribute(self):
+        vs = self.nc.get_variables_by_attributes(standard_name='projection_y_coordinate')
+        self.assertEqual(len(vs), 1)
+
+        vs = self.nc.get_variables_by_attributes(grid_spacing='4.0 km')
+        self.assertEqual(len(vs), 2)
+
+    def test_find_variables_by_multiple_attribute(self):
+        vs = self.nc.get_variables_by_attributes(grid_spacing='4.0 km', standard_name='projection_y_coordinate')
+        self.assertEqual(len(vs), 1)
+
+    def test_find_variables_by_single_lambda(self):
+        vs = self.nc.get_variables_by_attributes(_CoordinateAxisType=lambda v: v in ['Time', 'GeoX', 'GeoY'])
+        self.assertEqual(len(vs), 3)
+
+        vs = self.nc.get_variables_by_attributes(grid_mapping=lambda v: v is not None)
+        self.assertEqual(len(vs), 2)
+
+    def test_find_variables_by_multiple_lambdas(self):
+        vs = self.nc.get_variables_by_attributes(grid_mapping=lambda v: v is not None, long_name=lambda v: v is not None and 'v_component' in v)
+        self.assertEqual(len(vs), 1)
+
+    def test_find_variables_by_attribute_and_lambda(self):
+        vs = self.nc.get_variables_by_attributes(grid_mapping=lambda v: v is not None, units='m/s')
+        self.assertEqual(len(vs), 2)
+
+        vs = self.nc.get_variables_by_attributes(grid_mapping=lambda v: v is not None, long_name='v_component_wind_true_direction_all_geometries @ height_above_ground')
+        self.assertEqual(len(vs), 1)
+
 
 """
 netcdf coamps_cencoos_4km_wnd_tru_10m_2014-06-20-00_2014.171.00 {

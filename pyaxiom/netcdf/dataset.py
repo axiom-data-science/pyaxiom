@@ -1,6 +1,6 @@
 #!python
 # coding=utf-8
-from netCDF4 import Dataset
+from netCDF4 import Dataset, MFDataset
 
 
 class EnhancedDataset(Dataset):
@@ -45,6 +45,18 @@ class EnhancedDataset(Dataset):
                 vs.append(self.variables[vname])
 
         return vs
+
+    def close(self):
+        try:
+            self.sync()
+            self.close()
+        except RuntimeError:
+            pass
+
+
+class EnhancedMFDataset(MFDataset, EnhancedDataset):
+    def __init__(self, *args, **kwargs):
+        super(EnhancedMFDataset, self).__init__(*args, **kwargs)
 
     def close(self):
         try:
