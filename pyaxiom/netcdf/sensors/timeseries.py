@@ -17,7 +17,8 @@ from pyaxiom import logger
 class TimeSeries(object):
 
     @staticmethod
-    def from_dataframe(df, output_directory, output_filename, latitude, longitude, station_name, global_attributes, variable_name, variable_attributes, sensor_vertical_datum=None, fillvalue=None, data_column=None):
+    def from_dataframe(df, output_directory, output_filename, latitude, longitude, station_name, global_attributes, variable_name, variable_attributes, sensor_vertical_datum=None, fillvalue=None, data_column=None, vertical_axis_name=None, vertical_positive=None):
+
         if fillvalue is None:
             fillvalue = -9999.9
         if data_column is None:
@@ -28,40 +29,44 @@ class TimeSeries(object):
         df['depth'] = df['depth'].fillna(fillvalue)
         depths = df['depth'].values
         try:
-            ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue)
+            ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
             ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
         except ValueError:
             logger.warning("Failed first attempt, trying again with unique times.")
             try:
                 # Try uniquing time
                 newtimes  = np.unique(times)
-                ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue)
+                ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
                 ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
             except ValueError:
                 logger.warning("Failed second attempt, trying again with unique depths.")
                 try:
                     # Try uniquing depths
                     newdepths = np.unique(df['depth'].values)
-                    ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue)
+                    ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
                     ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
                 except ValueError:
                     logger.warning("Failed third attempt, uniquing time and depth.")
                     try:
                         # Unique both time and depth
                         newdepths = np.unique(df['depth'].values)
-                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue)
+                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
                         ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
                     except ValueError:
                         logger.warning("Failed fourth attempt, manually matching indexes (this is slow).")
                         # Manually match
-                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue)
+                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
                         ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, times=times, verticals=depths, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=False)
         return ts
 
-    def __init__(self, output_directory, latitude, longitude, station_name, global_attributes, times=None, verticals=None, vertical_fill=None, output_filename=None):
+    def __init__(self, output_directory, latitude, longitude, station_name, global_attributes, times=None, verticals=None, vertical_fill=None, output_filename=None, vertical_axis_name=None, vertical_positive=None):
         if output_filename is None:
             output_filename = '{}_{}.nc'.format(station_name, int(random.random()*100000))
             logger.info("No output filename specified, saving as {}".format(output_filename))
+
+        self.vertical_positive  = vertical_positive or 'down'
+        self.vertical_axis_name = vertical_axis_name or 'z'
+        self.time_axis_name     = 'time'
 
         # Make directory
         if not os.path.exists(output_directory):
@@ -126,8 +131,6 @@ class TimeSeries(object):
         if vertical_fill is None:
             vertical_fill = -9999.9
         self.vertical_fill      = vertical_fill
-        self.vertical_axis_name = 'height'
-        self.time_axis_name     = 'time'
 
         self.setup_times_and_verticals(times, verticals)
         logger.info("Created file at '{}'".format(out_file))
@@ -243,7 +246,7 @@ class TimeSeries(object):
                         inst_depth.units = 'm'
                         inst_depth.standard_name = 'surface_altitude'
                         inst_depth.long_name = 'sensor depth below datum'
-                        inst_depth.positive = 'up'
+                        inst_depth.positive = self.vertical_positive
                         inst_depth.datum = sensor_vertical_datum or 'Unknown'
                         inst_depth[:] = verticals[0] * -1
 
@@ -346,7 +349,7 @@ class TimeSeries(object):
             # Fill in variable if we have an actual height. Else, the fillvalue remains.
             if unique_verticals.any() and unique_verticals.size == 1:
                 # Vertical extents
-                self.nc.setncattr("geospatial_vertical_positive", "down")
+                self.nc.setncattr("geospatial_vertical_positive", self.vertical_positive)
                 self.nc.setncattr("geospatial_vertical_min",      unique_verticals[0])
                 self.nc.setncattr("geospatial_vertical_max",      unique_verticals[0])
             self.z = self.nc.createVariable(self.vertical_axis_name,     "f8", fill_value=self.vertical_fill)
@@ -358,7 +361,7 @@ class TimeSeries(object):
             minvertical    = float(np.min(unique_verticals))
             maxvertical    = float(np.max(unique_verticals))
             vertical_diffs = unique_verticals[1:] - unique_verticals[:-1]
-            self.nc.setncattr("geospatial_vertical_positive",   "down")
+            self.nc.setncattr("geospatial_vertical_positive",   self.vertical_positive)
             self.nc.setncattr("geospatial_vertical_min",        minvertical)
             self.nc.setncattr("geospatial_vertical_max",        maxvertical)
             self.nc.setncattr("geospatial_vertical_resolution", " ".join(map(unicode, list(vertical_diffs))))
@@ -369,7 +372,7 @@ class TimeSeries(object):
         self.z.grid_mapping  = 'crs'
         self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)
         self.z.standard_name = self.vertical_axis_name
-        self.z.positive      = "down"
+        self.z.positive      = self.vertical_positive
         self.z.units         = "m"
         self.z.axis          = "Z"
         self.z[:] = unique_verticals

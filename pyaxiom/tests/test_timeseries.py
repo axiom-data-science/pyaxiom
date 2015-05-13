@@ -98,7 +98,37 @@ class TestTimeSeries(unittest.TestCase):
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('z').size == len(verticals)
+        assert nc.variables.get('z').positive == 'down'
+        assert nc.variables.get('temperature').size == len(times) * len(verticals)
+        assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
+
+    def test_timeseries_profile_different_z_name(self):
+        filename = 'test_timeseries_profile_different_z_name.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = [0, 1, 2]
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=self.global_attributes,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals,
+                        vertical_positive='up',
+                        vertical_axis_name='height'
+                        )
+
+        values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals))
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+        ts.close()
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+        assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('height').size == len(verticals)
+        assert nc.variables.get('height').positive == 'up'
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
 
@@ -131,7 +161,7 @@ class TestTimeSeries(unittest.TestCase):
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
         assert nc.variables.get('time').size == len(times)
-        assert nc.variables.get('height').size == len(verticals)
+        assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == np.repeat([20, 21, 22, 23, 24, 25], len(verticals)).reshape((len(times), len(verticals)))).all()
 
@@ -156,7 +186,7 @@ class TestTimeSeries(unittest.TestCase):
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
         assert nc.variables.get('time').size == len(times)
-        assert nc.variables.get('height').size == len(list(set(verticals)))
+        assert nc.variables.get('z').size == len(list(set(verticals)))
         assert nc.variables.get('temperature').size == len(times) * len(list(set(verticals)))
 
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), 2))).all()
@@ -182,7 +212,7 @@ class TestTimeSeries(unittest.TestCase):
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
         assert nc.variables.get('time').size == len(times)
-        assert nc.variables.get('height').size == len(verticals)
+        assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
 
@@ -208,7 +238,7 @@ class TestTimeSeries(unittest.TestCase):
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
         assert nc.variables.get('time').size == len(times)
-        assert nc.variables.get('height').size == len(verticals)
+        assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
 
         assert nc.variables.get('temperature')[:][0][1] == 20
@@ -252,7 +282,7 @@ class TestTimeSeries(unittest.TestCase):
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
         assert nc.variables.get('time').size == len(times)
-        assert nc.variables.get('height').size == len(verticals)
+        assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
 
         assert nc.variables.get('temperature')[:][0][0] == 25
@@ -291,7 +321,7 @@ class TestTimeSeries(unittest.TestCase):
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
         assert nc.variables.get('time').size == len(times)
-        assert nc.variables.get('height').size == len(verticals)
+        assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert nc.variables.get('sensor_depth') is not None
         assert nc.variables.get('bottom_temperature').size == len(times)
@@ -326,7 +356,7 @@ class TestTimeSeries(unittest.TestCase):
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
         assert nc.variables.get('time').size == len(times)
-        assert nc.variables.get('height').size == len(verticals)
+        assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
         assert (nc.variables.get('salinity')[:] == values.reshape((len(times), len(verticals)))).all()
