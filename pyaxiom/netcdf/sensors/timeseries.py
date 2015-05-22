@@ -401,8 +401,11 @@ def get_dataframe_from_variable(nc, data_var):
             try:
                 depth_var = nc.get_variables_by_attributes(standard_name='surface_altitude')[0]
             except IndexError:
-                # No depth variable
-                depth_var = None
+                try:
+                    depth_var = nc.get_variables_by_attributes(axis='Z')[0]
+                except IndexError:
+                    # No depth variable
+                    depth_var = None
 
     times  = netCDF4.num2date(time_var[:], units=time_var.units)
     original_times_size = times.size

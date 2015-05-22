@@ -5,7 +5,8 @@ from datetime import timedelta
 import numpy as np
 import netCDF4
 
-from pyaxiom.netcdf.sensors import TimeSeries
+from pyaxiom.netcdf import EnhancedDataset
+from pyaxiom.netcdf.sensors import TimeSeries, get_dataframe_from_variable
 
 import logging
 from pyaxiom import logger
@@ -442,3 +443,22 @@ class TestTimeseriesTimeBounds(unittest.TestCase):
                                                                     [ 4000, 5000]
                                                                 ])).all()
         nc.close()
+
+
+class TestDataFrameFromVariable(unittest.TestCase):
+    def test_sensor_with_depths(self):
+        ncfile1 = os.path.join(os.path.dirname(__file__), 'resources', 'sensor_with_depths_1.nc')
+        ncd1 = EnhancedDataset(ncfile1)
+        ncvar1 = ncd1.variables['soil_moisture_percent']
+        df1 = get_dataframe_from_variable(ncd1, ncvar1)
+        ncd1.close()
+
+        ncfile2 = os.path.join(os.path.dirname(__file__), 'resources', 'sensor_with_depths_2.nc')
+        ncd2 = EnhancedDataset(ncfile2)
+        ncvar2 = ncd2.variables['soil_moisture_percent']
+        df2 = get_dataframe_from_variable(ncd2, ncvar2)
+        ncd2.close()
+
+        df = df2.combine_first(df1)
+
+        assert not df.empty
