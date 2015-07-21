@@ -39,7 +39,7 @@ class IoosUrn(object):
                 # Also a verion specified, so this has to be the component
                 urn.component = parts[5] + extras
             else:
-                logger.info("Assuming that {0} is the 'component' piece of the URN (not the 'version')".format(parts[5] + extras))
+                logger.debug("Assuming that {0} is the 'component' piece of the URN (not the 'version')".format(parts[5] + extras))
                 urn.component = parts[5] + extras
         if len(parts) > 6:
             urn.version = parts[6]
@@ -88,3 +88,9 @@ class IoosUrn(object):
                 return False
 
         return True
+
+    def __str__(self):
+        return self.urn
+
+    def __repr__(self):
+        return self.__str__

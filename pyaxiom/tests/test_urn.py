@@ -100,6 +100,13 @@ class IoosUrnTests(unittest.TestCase):
         assert u.label      == 'mylabel'
         assert u.component  == 'standard_name#key=key1:value1,key2:value2;some_other_key=some_other_value'
 
+    def test_cdiac_urn(self):
+        u = IoosUrn.from_string('urn:ioos:sensor:gov.ornl.cdiac:cheeca_80w_25n:sea_water_temperature')
+        assert u.asset_type == 'sensor'
+        assert u.authority  == 'gov.ornl.cdiac'
+        assert u.label      == 'cheeca_80w_25n'
+        assert u.component  == 'sea_water_temperature'
+
 
 class TestUrnUtils(unittest.TestCase):
 
