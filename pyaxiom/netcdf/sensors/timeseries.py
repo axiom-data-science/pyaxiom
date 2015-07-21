@@ -398,25 +398,27 @@ class TimeSeries(object):
 def get_dataframe_from_variable(nc, data_var):
     """ Returns a Pandas DataFrame of the data """
     time_var = nc.get_variables_by_attributes(standard_name='time')[0]
-    try:
-        depth_var = nc.get_variables_by_attributes(standard_name='height')[0]
-    except IndexError:
+
+    depth_vars = nc.get_variables_by_attributes(axis=lambda v: v is not None and v.lower() == 'z')
+    depth_vars += nc.get_variables_by_attributes(standard_name=lambda v: v in ['height', 'depth' 'surface_altitude'], positive=lambda x: x is not None)
+
+    # Find the correct depth variable
+    depth_var = None
+    for d in depth_vars:
         try:
-            depth_var = nc.get_variables_by_attributes(standard_name='depth')[0]
-        except IndexError:
-            try:
-                depth_var = nc.get_variables_by_attributes(standard_name='surface_altitude')[0]
-            except IndexError:
-                try:
-                    depth_var = nc.get_variables_by_attributes(axis='Z')[0]
-                except IndexError:
-                    # No depth variable
-                    depth_var = None
+            if d._name in data_var.coordinates.split(" ") or d._name in data_var.dimensions:
+                depth_var = d
+                break
+        except AttributeError:
+            continue
 
     times  = netCDF4.num2date(time_var[:], units=time_var.units)
     original_times_size = times.size
 
-    if depth_var is None:
+    if depth_var is None and hasattr(data_var, 'sensor_depth'):
+        depths = np.asarray([data_var.sensor_depth] * len(times)).flatten()
+        values = data_var[:].flatten()
+    elif depth_var is None:
         depths = np.asarray([np.nan] * len(times)).flatten()
         values = data_var[:].flatten()
     else:
