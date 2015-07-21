@@ -245,8 +245,11 @@ class TimeSeries(object):
                         inst_depth = self.nc.createVariable('sensor_depth', 'f4')
                         inst_depth.units = 'm'
                         inst_depth.standard_name = 'surface_altitude'
-                        inst_depth.long_name = 'sensor depth below datum'
                         inst_depth.positive = self.vertical_positive
+                        if self.vertical_positive.lower() == 'down':
+                            inst_depth.long_name = 'sensor depth below datum'
+                        elif self.vertical_positive.lower() == 'up':
+                            inst_depth.long_name = 'sensor height above datum'
                         inst_depth.datum = sensor_vertical_datum or 'Unknown'
                         inst_depth[:] = verticals[0] * -1
 
@@ -371,7 +374,10 @@ class TimeSeries(object):
 
         self.z.grid_mapping  = 'crs'
         self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)
-        self.z.standard_name = self.vertical_axis_name
+        if self.vertical_positive == 'up':
+            self.z.standard_name = 'height'
+        elif self.vertical_positive == 'down':
+            self.z.standard_name = 'depth'
         self.z.positive      = self.vertical_positive
         self.z.units         = "m"
         self.z.axis          = "Z"
