@@ -142,7 +142,7 @@ class TimeSeries(object):
         instrument.ioos_code = urn
 
     def add_time_bounds(self, delta=None, position=None):
-        self.nc.createDimension("bounds")
+        self.nc.createDimension("bounds", 2)
         time_bounds = self.nc.createVariable('{}_bounds'.format(self.time_axis_name), "f8", ("time", "bounds",), chunksizes=(1000, 2,))
         time_bounds.units    = "seconds since 1970-01-01T00:00:00Z"
         time_bounds.calendar = "gregorian"
