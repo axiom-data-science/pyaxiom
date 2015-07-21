@@ -237,7 +237,7 @@ class TimeSeries(object):
                 var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
             else:
                 # This is probably a bottom sensor on an ADCP or something, don't add the height coordinate
-                var.coordinates = "time latitude longitude"
+                var.coordinates = "{} latitude longitude".format(self.time_axis_name)
                 if unlink_from_profile is True:
                     # Create metadata variable for the sensor_depth
                     if self.nc.variables.get('sensor_depth') is None:
