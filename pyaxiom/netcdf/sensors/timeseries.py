@@ -271,7 +271,7 @@ class TimeSeries(object):
                     except AttributeError:
                         pass
 
-                if k != '_FillValue' and v is not None:
+                if k not in ['coordinates', '_FillValue'] and v is not None:
                     try:
                         var.setncattr(k, v)
                     except BaseException:
