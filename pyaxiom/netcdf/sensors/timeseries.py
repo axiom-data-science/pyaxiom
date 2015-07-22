@@ -273,7 +273,7 @@ class TimeSeries(object):
 
                 if k != '_FillValue' and v is not None:
                     try:
-                        setattr(var, k, v)
+                        var.setncattr(k, v)
                     except BaseException:
                         logger.info('Could not add attribute {}: {}, skipping.'.format(k, v))
 
