@@ -32,10 +32,7 @@ before_install:
 install:
   # Customise the testing environment
   # ---------------------------------
-  - conda install --channel https://conda.binstar.org/rsignell --file requirements.txt
-  - conda install pytest
-  - pip install nco
-  - pip install pyncml
+  - conda install --channel ioos --file requirements.txt
+  - conda install --channel ioos nco pyncml pytest
   - conda list --export
-  - pip freeze
 script: py.test -v
