@@ -434,5 +434,5 @@ def get_dataframe_from_variable(nc, data_var):
                         'value':  values,
                         'unit':   data_var.units,
                         'depth':  depths })
-    df = df.set_index([pd.DatetimeIndex(df['time']), pd.Float64Index(df['depth'])])
+    df.set_index([pd.DatetimeIndex(df['time']), pd.Float64Index(df['depth'])], inplace=True)
     return df
