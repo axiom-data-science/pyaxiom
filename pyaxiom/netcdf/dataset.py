@@ -30,7 +30,7 @@ class EnhancedDataset(Dataset):
         has_value_flag  = False
         for vname in self.variables:
             var = self.variables[vname]
-            for k, v in kwargs.iteritems():
+            for k, v in kwargs.items():
                 if callable(v):
                     has_value_flag = v(getattr(var, k, None))
                     if has_value_flag is False:
