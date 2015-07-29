@@ -1,4 +1,4 @@
-__version__ = "0.0.14-dev"
+__version__ = "1.0.0"
 
 # Package level logger
 import logging
