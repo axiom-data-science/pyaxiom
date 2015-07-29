@@ -192,7 +192,6 @@ class NetcdfCollectionTestFromNcml(unittest.TestCase):
                         reason="No workie in Travis")
     def test_combine_with_dimension(self):
         output_file = tempfile.NamedTemporaryFile().name
-        print output_file
         members = [ m.path for m in self.c.aggregation.members ]
         Collection.combine(members=members, output_file=output_file, dimension='time')
         self.assertTrue(os.path.isfile(output_file))

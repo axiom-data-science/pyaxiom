@@ -159,7 +159,7 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
     if 'interval' in data_dict and data_dict['interval']:
         if isinstance(data_dict['interval'], (list, tuple,)):
             intervals += data_dict['interval']
-        elif isinstance(data_dict['interval'], basestring):
+        elif isinstance(data_dict['interval'], str):
             intervals += [data_dict['interval']]
 
     if 'standard_name' in data_dict and data_dict['standard_name']:

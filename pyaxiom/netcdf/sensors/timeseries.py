@@ -82,7 +82,7 @@ class TimeSeries(object):
                         "featureType", "geospatial_vertical_positive", "geospatial_vertical_min", "geospatial_vertical_max",
                         "geospatial_lat_min", "geospatial_lon_min", "geospatial_lat_max", "geospatial_lon_max",
                         "geospatial_vertical_resolution", "Conventions", "date_created"]
-        for k, v in global_attributes.iteritems():
+        for k, v in global_attributes.items():
             if v is None:
                 v = "None"
             if k not in global_skips:
@@ -151,11 +151,11 @@ class TimeSeries(object):
         bounds_kwargs = dict(units=time_bounds.units, calendar=time_bounds.calendar)
 
         if position == "start":
-            time_bounds[:] = np.asarray(zip(self.time[:], netCDF4.date2num(time_objs + delta, **bounds_kwargs)))
+            time_bounds[:] = np.asarray(list(zip(self.time[:], netCDF4.date2num(time_objs + delta, **bounds_kwargs))))
         elif position == "middle":
-            time_bounds[:] = np.asarray(zip(netCDF4.date2num(time_objs - delta/2, **bounds_kwargs), netCDF4.date2num(time_objs + delta/2, **bounds_kwargs)))
+            time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta/2, **bounds_kwargs), netCDF4.date2num(time_objs + delta/2, **bounds_kwargs))))
         elif position == "end":
-            time_bounds[:] = np.asarray(zip(netCDF4.date2num(time_objs - delta, **bounds_kwargs), self.time[:]))
+            time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta, **bounds_kwargs), self.time[:])))
 
     def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None, raise_on_error=False):
 
@@ -208,7 +208,7 @@ class TimeSeries(object):
                     # Hmmm, we have two actual height values for this station.
                     # Not cool man, not cool.
                     # Reindex the entire values array.  This is slow.
-                    indexed = ((bisect.bisect_left(self.time[:], times[i]), bisect.bisect_left(self.z[:], verticals[i]), values[i]) for i in xrange(values.size))
+                    indexed = ((bisect.bisect_left(self.time[:], times[i]), bisect.bisect_left(self.z[:], verticals[i]), values[i]) for i in range(values.size))
                     used_values = np.ndarray((self.time.size, self.z.size, ), dtype=np.float64)
                     used_values.fill(float(fillvalue))
                     for (tzi, zzi, vz) in indexed:
@@ -220,7 +220,7 @@ class TimeSeries(object):
             else:
                 if times is not None:
                     # Ugh, find the time indexes manually
-                    indexed = ((bisect.bisect_left(self.time[:], times[i]), values[i]) for i in xrange(values.size))
+                    indexed = ((bisect.bisect_left(self.time[:], times[i]), values[i]) for i in range(values.size))
                     used_values = np.ndarray((self.time.size, ), dtype=np.float64)
                     used_values.fill(float(fillvalue))
                     for (tzi, vz) in indexed:
@@ -260,7 +260,7 @@ class TimeSeries(object):
             raise ValueError("Could not create variable.  Shape of data is {!s}.  Expected a dimension of 1 or 2, not {!s}.".format(used_values.shape, len(used_values.shape)))
         # Set the variable attributes as passed in
         if attributes:
-            for k, v in attributes.iteritems():
+            for k, v in attributes.items():
 
                 if k == 'vertical_datum' and sensor_vertical_datum is None and v is not None:
                     # Use this as the vertical datum if it is specified and we didn't already have one
@@ -326,14 +326,14 @@ class TimeSeries(object):
         self.nc.setncattr("time_coverage_start",    starting.isoformat())
         self.nc.setncattr("time_coverage_end",      ending.isoformat())
         # duration (ISO8601 format)
-        self.nc.setncattr("time_coverage_duration", "P%sS" % unicode(int(round((ending - starting).total_seconds()))))
+        self.nc.setncattr("time_coverage_duration", "P%sS" % str(int(round((ending - starting).total_seconds()))))
         # resolution (ISO8601 format)
         # subtract adjacent times to produce an array of differences, then get the most common occurance
         diffs = unique_times[1:] - unique_times[:-1]
         uniqs, inverse = np.unique(diffs, return_inverse=True)
         if uniqs.size > 1:
             time_diffs = diffs[np.bincount(inverse).argmax()]
-            self.nc.setncattr("time_coverage_resolution", "P%sS" % unicode(int(round(time_diffs))))
+            self.nc.setncattr("time_coverage_resolution", "P%sS" % str(int(round(time_diffs))))
 
         # Time - 32-bit unsigned integer
         self.nc.createDimension("time")
@@ -367,7 +367,7 @@ class TimeSeries(object):
             self.nc.setncattr("geospatial_vertical_positive",   self.vertical_positive)
             self.nc.setncattr("geospatial_vertical_min",        minvertical)
             self.nc.setncattr("geospatial_vertical_max",        maxvertical)
-            self.nc.setncattr("geospatial_vertical_resolution", " ".join(map(unicode, list(vertical_diffs))))
+            self.nc.setncattr("geospatial_vertical_resolution", " ".join(map(str, list(vertical_diffs))))
             # There is more than one vertical value for this variable, we need to create a vertical dimension
             self.nc.createDimension("z", unique_verticals.size)
             self.z = self.nc.createVariable(self.vertical_axis_name,     "f8", ("z", ), fill_value=self.vertical_fill)

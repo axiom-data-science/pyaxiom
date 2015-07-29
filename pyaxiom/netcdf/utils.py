@@ -4,7 +4,7 @@
 
 def cf_safe_name(name):
     import re
-    if isinstance(name, basestring):
+    if isinstance(name, str):
         if re.match('^[0-9_]', name):
             # Add a letter to the front
             name = "v_{}".format(name)

@@ -76,9 +76,9 @@ class Collection(object):
                     nc = netCDF4.Dataset(filepath)
 
                 if dataset_name is None:
-                    if hasattr(nc, 'name'):
+                    if 'name' in nc.ncattrs():
                         dataset_name = nc.name
-                    elif hasattr(nc, 'title'):
+                    elif 'title' in nc.ncattrs():
                         dataset_name = nc.title
                     else:
                         dataset_name = "Pyaxiom Glob Dataset"
@@ -91,7 +91,7 @@ class Collection(object):
                 # Start/Stop of NetCDF file
                 starting  = netCDF4.num2date(np.min(timevar[:]), units=timevar.units)
                 ending    = netCDF4.num2date(np.max(timevar[:]), units=timevar.units)
-                variables = filter(None, [ nc.variables[v].standard_name if hasattr(nc.variables[v], 'standard_name') else None for v in nc.variables.keys() ])
+                variables = list(filter(None, [ nc.variables[v].standard_name if hasattr(nc.variables[v], 'standard_name') else None for v in nc.variables.keys() ]))
 
                 dataset_variables = list(set(dataset_variables + variables))
 
