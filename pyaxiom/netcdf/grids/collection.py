@@ -91,7 +91,7 @@ class Collection(object):
                 # Start/Stop of NetCDF file
                 starting  = netCDF4.num2date(np.min(timevar[:]), units=timevar.units)
                 ending    = netCDF4.num2date(np.max(timevar[:]), units=timevar.units)
-                variables = list(filter(None, [ nc.variables[v].standard_name if hasattr(nc.variables[v], 'standard_name') else None for v in nc.variables.keys() ]))
+                variables = list([_f for _f in [ nc.variables[v].standard_name if hasattr(nc.variables[v], 'standard_name') else None for v in list(nc.variables.keys()) ] if _f])
 
                 dataset_variables = list(set(dataset_variables + variables))
 

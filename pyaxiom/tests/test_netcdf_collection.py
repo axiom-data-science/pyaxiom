@@ -23,14 +23,14 @@ class NetcdfCollectionTestFromDirectory(unittest.TestCase):
         self.c = Collection.from_directory(input_folder)
 
     def test_name(self):
-        self.assertEquals(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
+        self.assertEqual(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
 
     def test_members(self):
-        self.assertEquals(len(self.c.aggregation.members), 14)
+        self.assertEqual(len(self.c.aggregation.members), 14)
 
     def test_time(self):
-        self.assertEquals(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
 
 
 class NetcdfCollectionTestFromDirectoryNoNcmlToMembers(unittest.TestCase):
@@ -40,14 +40,14 @@ class NetcdfCollectionTestFromDirectoryNoNcmlToMembers(unittest.TestCase):
         self.c = Collection.from_directory(input_folder, apply_to_members=False)
 
     def test_name(self):
-        self.assertEquals(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
+        self.assertEqual(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
 
     def test_members(self):
-        self.assertEquals(len(self.c.aggregation.members), 14)
+        self.assertEqual(len(self.c.aggregation.members), 14)
 
     def test_time(self):
-        self.assertEquals(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
 
 
 class NetcdfCollectionTestFromGlob(unittest.TestCase):
@@ -57,14 +57,14 @@ class NetcdfCollectionTestFromGlob(unittest.TestCase):
         self.c = Collection.from_glob(glob_string)
 
     def test_name(self):
-        self.assertEquals(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
+        self.assertEqual(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
 
     def test_members(self):
-        self.assertEquals(len(self.c.aggregation.members), 14)
+        self.assertEqual(len(self.c.aggregation.members), 14)
 
     def test_time(self):
-        self.assertEquals(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
 
 
 class NetcdfCollectionTestFromNestedGlobAndNcml(unittest.TestCase):
@@ -79,14 +79,14 @@ class NetcdfCollectionTestFromNestedGlobAndNcml(unittest.TestCase):
         self.c = Collection.from_glob(glob_string, ncml=ncml)
 
     def test_name(self):
-        self.assertEquals(self.c.aggregation.name, "changed")
+        self.assertEqual(self.c.aggregation.name, "changed")
 
     def test_members(self):
-        self.assertEquals(len(self.c.aggregation.members), 14)
+        self.assertEqual(len(self.c.aggregation.members), 14)
 
     def test_time(self):
-        self.assertEquals(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
 
 
 class NetcdfCollectionTestFromNcml(unittest.TestCase):
@@ -96,80 +96,80 @@ class NetcdfCollectionTestFromNcml(unittest.TestCase):
         self.c = Collection.from_ncml_file(input_ncml)
 
     def test_name(self):
-        self.assertEquals(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
+        self.assertEqual(self.c.aggregation.name, "U.S. Navy Fleet Numerical Meteorology and Oceanography Center Forecast/Uninitialized Analysis/Image Product")
 
     def test_members(self):
-        self.assertEquals(len(self.c.aggregation.members), 14)
+        self.assertEqual(len(self.c.aggregation.members), 14)
 
     def test_time(self):
-        self.assertEquals(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(self.c.aggregation.ending, datetime(2014, 7, 19, 23, 0, tzinfo=pytz.utc))
 
     def test_yearly_bins(self):
         starting = self.c.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0, day=1, month=1)
         bins = self.c.bins(delta=relativedelta(years=+1), starting=starting)
-        self.assertEquals(len(bins), 1)
+        self.assertEqual(len(bins), 1)
 
         first_month = bins[0]
-        self.assertEquals(first_month.starting, datetime(2014, 1, 1, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(first_month.ending, datetime(2015, 1, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(first_month.starting, datetime(2014, 1, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(first_month.ending, datetime(2015, 1, 1, 0, 0, tzinfo=pytz.utc))
 
     def test_bimonthy_bins(self):
         starting = self.c.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0, day=1)
         bins = self.c.bins(delta=relativedelta(months=+2), starting=starting)
-        self.assertEquals(len(bins), 1)
+        self.assertEqual(len(bins), 1)
 
         first_month = bins[0]
-        self.assertEquals(first_month.starting, datetime(2014, 6, 1, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(first_month.ending, datetime(2014, 8, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(first_month.starting, datetime(2014, 6, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(first_month.ending, datetime(2014, 8, 1, 0, 0, tzinfo=pytz.utc))
 
     def test_monthly_bins(self):
         starting = self.c.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0, day=1)
         bins = self.c.bins(delta=relativedelta(months=+1), starting=starting)
-        self.assertEquals(len(bins), 2)
+        self.assertEqual(len(bins), 2)
 
         first_month = bins[0]
-        self.assertEquals(first_month.starting, datetime(2014, 6, 1, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(first_month.ending, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(first_month.starting, datetime(2014, 6, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(first_month.ending, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
 
         second_month = bins[1]
-        self.assertEquals(second_month.starting, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(second_month.ending, datetime(2014, 8, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(second_month.starting, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(second_month.ending, datetime(2014, 8, 1, 0, 0, tzinfo=pytz.utc))
 
     def test_daily_bins(self):
         starting = self.c.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0)
         bins = self.c.bins(delta=relativedelta(days=+1), starting=starting)
-        self.assertEquals(len(bins), 2)
+        self.assertEqual(len(bins), 2)
 
         first_day = bins[0]
-        self.assertEquals(first_day.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(first_day.ending, datetime(2014, 6, 21, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(first_day.starting, datetime(2014, 6, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(first_day.ending, datetime(2014, 6, 21, 0, 0, tzinfo=pytz.utc))
 
         second_day = bins[1]
-        self.assertEquals(second_day.starting, datetime(2014, 7, 19, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(second_day.ending, datetime(2014, 7, 20, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(second_day.starting, datetime(2014, 7, 19, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(second_day.ending, datetime(2014, 7, 20, 0, 0, tzinfo=pytz.utc))
 
     def test_hard_start(self):
         starting = self.c.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0, day=1)
         hard_start = datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc)
         bins = self.c.bins(delta=relativedelta(months=+1), starting=starting, hard_start=hard_start)
-        self.assertEquals(len(bins), 1)
+        self.assertEqual(len(bins), 1)
 
         second_month = bins[0]
-        self.assertEquals(len(second_month.members), 4)
-        self.assertEquals(second_month.starting, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(second_month.ending, datetime(2014, 8, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(len(second_month.members), 4)
+        self.assertEqual(second_month.starting, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(second_month.ending, datetime(2014, 8, 1, 0, 0, tzinfo=pytz.utc))
 
     def test_hard_end(self):
         starting = self.c.aggregation.starting.replace(microsecond=0, second=0, minute=0, hour=0, day=1)
         hard_end = datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc)
         bins = self.c.bins(delta=relativedelta(months=+1), starting=starting, hard_end=hard_end)
-        self.assertEquals(len(bins), 1)
+        self.assertEqual(len(bins), 1)
 
         first_month = bins[0]
-        self.assertEquals(len(first_month.members), 10)
-        self.assertEquals(first_month.starting, datetime(2014, 6, 1, 0, 0, tzinfo=pytz.utc))
-        self.assertEquals(first_month.ending, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(len(first_month.members), 10)
+        self.assertEqual(first_month.starting, datetime(2014, 6, 1, 0, 0, tzinfo=pytz.utc))
+        self.assertEqual(first_month.ending, datetime(2014, 7, 1, 0, 0, tzinfo=pytz.utc))
 
     @pytest.mark.skipif(os.environ.get("TRAVIS_PYTHON_VERSION") is not None,
                         reason="No workie in Travis")

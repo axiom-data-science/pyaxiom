@@ -7,6 +7,8 @@ import argparse
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
+import six
+
 from pyaxiom.netcdf.grids import Collection
 
 import pytz
@@ -68,7 +70,7 @@ def run():
     parser.add_argument('-o', '--output',
                         help="Directory to output the binned files to",
                         required=True,
-                        type=unicode)
+                        type=six.text_type)
     parser.add_argument('-d', '--delta',
                         help="Timedelta to bin by",
                         required=True,
@@ -82,22 +84,22 @@ def run():
                         help="NcML containing an aggregation scan to use for the individual files. One of 'ncml_file' or 'glob_string' is required. If both are passed in, \
                               the 'glob_string' is used to identify files for the collection and the 'ncml_file' is applied against each member.",
                         nargs='?',
-                        type=unicode)
+                        type=six.text_type)
     parser.add_argument('-g', '--glob_string',
                         help="A Python glob.glob string to use for file identification. One of 'ncml_file' or 'glob_string' is required. If both are passed in, \
                               the 'glob_string' is used to identify files for the collection and the 'ncml_file' is applied against each member.",
                         nargs='?',
-                        type=unicode)
+                        type=six.text_type)
     parser.add_argument('-a', '--apply_to_members',
                         help="Flag to apply the NcML to each member of the aggregation before extracting metadata. \
                               Ignored if using a 'glob_string'.  Defaults to False.",
                         action='store_true')
     parser.add_argument('-s', '--hard_start',
                         help="A datetime string to start the aggregation from. Only members starting on or after this datetime will be processed.",
-                        type=unicode)
+                        type=six.text_type)
     parser.add_argument('-e', '--hard_end',
                         help="A datetime string to end the aggregation on. Only members ending before this datetime will be processed.",
-                        type=unicode)
+                        type=six.text_type)
 
     args        = parser.parse_args()
     output_path = str(os.path.realpath(args.output))

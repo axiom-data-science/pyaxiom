@@ -24,7 +24,7 @@ def clone(src, dst_path, skip_globals, skip_dimensions, skip_variables):
     # Dimensions
     unlimdim     = None
     unlimdimname = False
-    for dimname, dim in src.dimensions.iteritems():
+    for dimname, dim in src.dimensions.items():
 
         # Skip what we need to
         if dimname in skip_dimensions:
@@ -38,7 +38,7 @@ def clone(src, dst_path, skip_globals, skip_dimensions, skip_variables):
             dst.createDimension(dimname, len(dim))
 
     # Variables
-    for varname, ncvar in src.variables.iteritems():
+    for varname, ncvar in src.variables.items():
 
         # Skip what we need to
         if varname in skip_variables:
