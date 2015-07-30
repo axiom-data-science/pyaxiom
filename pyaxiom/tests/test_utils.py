@@ -21,7 +21,7 @@ class TestUtils(unittest.TestCase):
         x = nc.variables.get('x')
         y = nc.variables.get('y')
 
-        self.assertEquals(len(grid_spacing_vars), 2)
+        self.assertEqual(len(grid_spacing_vars), 2)
         assert x in grid_spacing_vars
         assert y in grid_spacing_vars
 
@@ -31,7 +31,7 @@ class TestUtils(unittest.TestCase):
 
         y = nc.variables.get('y')
 
-        self.assertEquals(len(grid_spacing_vars), 1)
+        self.assertEqual(len(grid_spacing_vars), 1)
         assert y in grid_spacing_vars
 
 
@@ -39,9 +39,9 @@ class TestNetcdfUtils(unittest.TestCase):
 
     def test_cf_safe_name(self):
         from pyaxiom.netcdf.utils import cf_safe_name
-        self.assertEquals('foo', cf_safe_name('foo'))
-        self.assertEquals('v_1foo', cf_safe_name('1foo'))
-        self.assertEquals('v_1foo_99', cf_safe_name('1foo-99'))
-        self.assertEquals('foo_99', cf_safe_name('foo-99'))
-        self.assertEquals('foo_99_', cf_safe_name('foo(99)'))
-        self.assertEquals('v__foo_99_', cf_safe_name('_foo(99)'))
+        self.assertEqual('foo', cf_safe_name('foo'))
+        self.assertEqual('v_1foo', cf_safe_name('1foo'))
+        self.assertEqual('v_1foo_99', cf_safe_name('1foo-99'))
+        self.assertEqual('foo_99', cf_safe_name('foo-99'))
+        self.assertEqual('foo_99_', cf_safe_name('foo(99)'))
+        self.assertEqual('v__foo_99_', cf_safe_name('_foo(99)'))
