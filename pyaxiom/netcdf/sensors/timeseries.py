@@ -72,8 +72,8 @@ class TimeSeries(object):
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        out_file = os.path.abspath(os.path.join(output_directory, output_filename))
-        self.nc = netCDF4.Dataset(out_file, 'w')
+        self.out_file = os.path.abspath(os.path.join(output_directory, output_filename))
+        self.nc = netCDF4.Dataset(self.out_file, 'w')
         self.time = None
 
         # Global attributes
@@ -133,7 +133,7 @@ class TimeSeries(object):
         self.vertical_fill      = vertical_fill
 
         self.setup_times_and_verticals(times, verticals)
-        logger.info("Created file at '{}'".format(out_file))
+        logger.info("Created file at '{}'".format(self.out_file))
 
     def add_instrument_metadata(self, urn):
         instrument = self.nc.createVariable("instrument", "i4")
@@ -202,7 +202,7 @@ class TimeSeries(object):
                 self.close()
                 raise
             else:
-                logger.exception("Could not do a simple reshape of data, trying to match manually! Time:{!s}, Heights:{!s}, Values:{!s}".format(self.time.size, self.z.size, values.size))
+                logger.error("Could not do a simple reshape of data, trying to match manually! Time:{!s}, Heights:{!s}, Values:{!s}".format(self.time.size, self.z.size, values.size))
             if self.z.size > 1:
                 if times is not None and verticals is not None:
                     # Hmmm, we have two actual height values for this station.
@@ -281,6 +281,24 @@ class TimeSeries(object):
         var[:] = used_values
 
         return var
+
+    def add_variable_object(self, varobject):
+
+        fillvalue = -9999.99
+        if hasattr(varobject, '_FillValue'):
+            fillvalue = varobject._FillValue
+
+        self.nc = netCDF4.Dataset(self.out_file, 'a')
+
+        for i, d in enumerate(varobject.dimensions):
+            if d not in self.nc.dimensions:
+                self.nc.createDimension(d, varobject.shape[i])
+        var = self.nc.createVariable(varobject.name, varobject.dtype, varobject.dimensions, fill_value=fillvalue, zlib=True)
+
+        for k in varobject.ncattrs():
+            if k not in ['_FillValue']:
+                var.setncattr(k, varobject.getncattr(k))
+        var[:] = varobject[:]
 
     def setup_times_and_verticals(self, times, verticals):
 
