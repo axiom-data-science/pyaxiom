@@ -282,7 +282,9 @@ class TimeSeries(object):
 
         return var
 
-    def add_variable_object(self, varobject):
+    def add_variable_object(self, varobject, dimension_map=None):
+
+        dimension_map = dimension_map or {}
 
         fillvalue = -9999.99
         if hasattr(varobject, '_FillValue'):
@@ -291,9 +293,12 @@ class TimeSeries(object):
         self.nc = netCDF4.Dataset(self.out_file, 'a')
 
         for i, d in enumerate(varobject.dimensions):
+            d = dimension_map.get(d, d)
             if d not in self.nc.dimensions:
                 self.nc.createDimension(d, varobject.shape[i])
-        var = self.nc.createVariable(varobject.name, varobject.dtype, varobject.dimensions, fill_value=fillvalue, zlib=True)
+
+        dims = [ dimension_map.get(x, x) for x in varobject.dimensions ]
+        var = self.nc.createVariable(varobject.name, varobject.dtype, dims, fill_value=fillvalue, zlib=True)
 
         for k in varobject.ncattrs():
             if k not in ['_FillValue']:
