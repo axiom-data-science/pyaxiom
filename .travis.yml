@@ -3,11 +3,14 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
-before_install:
-  # System packages
-  - sudo apt-get update -qq
-  - sudo apt-get install -y nco
 
+sudo: false
+addons:
+  apt:
+    packages:
+      - nco
+
+before_install:
   # Install miniconda
   # -----------------
   - export CONDA_BASE=http://repo.continuum.io/miniconda/Miniconda
