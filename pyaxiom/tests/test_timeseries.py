@@ -40,7 +40,6 @@ class TestTimeSeries(unittest.TestCase):
         values = [20, 21, 22, 23, 24, 25]
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -70,7 +69,6 @@ class TestTimeSeries(unittest.TestCase):
         value_times = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000]
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs, times=value_times)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -94,7 +92,6 @@ class TestTimeSeries(unittest.TestCase):
         values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals))
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -123,7 +120,6 @@ class TestTimeSeries(unittest.TestCase):
         values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals))
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -157,7 +153,6 @@ class TestTimeSeries(unittest.TestCase):
         values_verticals = np.repeat(verticals, len(new_times))
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs, times=values_times, verticals=values_verticals)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -182,7 +177,6 @@ class TestTimeSeries(unittest.TestCase):
         values = np.repeat([20, 21, 22, 23, 24, 25], 2)
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -208,7 +202,6 @@ class TestTimeSeries(unittest.TestCase):
         values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals)).reshape((len(times), len(verticals)))
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -234,7 +227,6 @@ class TestTimeSeries(unittest.TestCase):
         values = [self.fillvalue, 20, self.fillvalue, 21, self.fillvalue, 22, self.fillvalue, 23, self.fillvalue, 24, self.fillvalue, 25]
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs, fillvalue=self.fillvalue)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -278,7 +270,6 @@ class TestTimeSeries(unittest.TestCase):
         values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals))
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs, fillvalue=self.fillvalue)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -317,7 +308,6 @@ class TestTimeSeries(unittest.TestCase):
         attrs = dict(standard_name='sea_water_temperature')
         ts.add_variable('temperature', values=values, attributes=attrs)
         ts.add_variable('bottom_temperature', values=bottom_values, verticals=[60], unlink_from_profile=True, attributes=attrs)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -352,7 +342,6 @@ class TestTimeSeries(unittest.TestCase):
         ts.add_variable('salinity',           values=values.reshape((len(times), len(verticals))))
         ts.add_variable('dissolved_oxygen',   values=full_masked, fillvalue=full_masked.fill_value)
         ts.add_variable('bottom_temperature', values=bottom_values, verticals=[60], unlink_from_profile=True, attributes=attrs)
-        ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
@@ -390,13 +379,11 @@ class TestTimeseriesTimeBounds(unittest.TestCase):
         self.ts.add_variable('temperature', values=self.values, attributes=attrs)
 
     def tearDown(self):
-        self.ts.close()
         os.remove(os.path.join(self.output_directory, self.filename))
 
     def test_time_bounds_start(self):
         delta = timedelta(seconds=1000)
         self.ts.add_time_bounds(delta=delta, position='start')
-        self.ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, self.filename))
         assert nc.variables.get('time_bounds').shape == (len(self.times), 2,)
@@ -413,7 +400,6 @@ class TestTimeseriesTimeBounds(unittest.TestCase):
     def test_time_bounds_middle(self):
         delta = timedelta(seconds=1000)
         self.ts.add_time_bounds(delta=delta, position='middle')
-        self.ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, self.filename))
         assert nc.variables.get('time_bounds').shape == (len(self.times), 2,)
@@ -430,7 +416,6 @@ class TestTimeseriesTimeBounds(unittest.TestCase):
     def test_time_bounds_end(self):
         delta = timedelta(seconds=1000)
         self.ts.add_time_bounds(delta=delta, position='end')
-        self.ts.close()
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, self.filename))
         assert nc.variables.get('time_bounds').shape == (len(self.times), 2,)

@@ -224,8 +224,6 @@ class TestUrnUtils(unittest.TestCase):
         urn = urnify('axiom', 'foo', ts.ncd.variables['temperature4'])
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean,time:variance;interval=pt1h'
 
-        ts.close()
-
     def test_dict_from_urn(self):
         urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
         d = dictify_urn(urn)
