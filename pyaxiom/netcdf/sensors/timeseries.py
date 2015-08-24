@@ -286,9 +286,10 @@ class TimeSeries(object):
 
             return var
 
-    def add_variable_object(self, varobject, dimension_map=None):
+    def add_variable_object(self, varobject, dimension_map=None, reduce_dims=None):
 
         dimension_map = dimension_map or {}
+        reduce_dims = reduce_dims or False
 
         with EnhancedDataset(self.out_file, 'a') as nc:
 
@@ -296,18 +297,27 @@ class TimeSeries(object):
             if hasattr(varobject, '_FillValue'):
                 fillvalue = varobject._FillValue
 
-            for i, d in enumerate(varobject.dimensions):
-                d = dimension_map.get(d, d)
-                if d not in nc.dimensions:
-                    nc.createDimension(d, varobject.shape[i])
+            dims = []
+            for n in varobject.dimensions:
+                d = dimension_map.get(n, n)
+                dim_size = varobject.shape[list(varobject.dimensions).index(n)]
+                if reduce_dims is True and dim_size in [0, 1]:
+                    continue
 
-            dims = [ dimension_map.get(x, x) for x in varobject.dimensions ]
+                if d not in nc.dimensions:
+                    nc.createDimension(d, dim_size)
+                dims.append(d)
+
             var = nc.createVariable(varobject.name, varobject.dtype, dims, fill_value=fillvalue, zlib=True)
 
             for k in varobject.ncattrs():
                 if k not in ['name', '_FillValue']:
                     var.setncattr(k, varobject.getncattr(k))
-            var[:] = varobject[:]
+
+            if reduce_dims:
+                var[:] = varobject[:].squeeze()
+            else:
+                var[:] = varobject[:]
 
     def setup_times_and_verticals(self, times, verticals):
 
