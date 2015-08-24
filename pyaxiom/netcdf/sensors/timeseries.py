@@ -255,7 +255,10 @@ class TimeSeries(object):
                             elif self.vertical_positive.lower() == 'up':
                                 inst_depth.long_name = 'sensor height above datum'
                             inst_depth.datum = sensor_vertical_datum or 'Unknown'
-                            inst_depth[:] = verticals[0]
+                            if verticals and verticals.size > 0:
+                                inst_depth[:] = verticals[0]
+                            else:
+                                inst_depth[:] = self.vertical_fill
 
             elif len(used_values.shape) == 2:
                 var = nc.createVariable(variable_name,    "f8", ("time", "z",), fill_value=fillvalue, chunksizes=(1000, self.z.size,), zlib=True)
