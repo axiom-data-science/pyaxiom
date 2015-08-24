@@ -10,6 +10,13 @@ fi
 
 # Set version to release
 sed -i "s/^__version__ = .*/__version__ = \"$1\"/" pyaxiom/__init__.py
+sed -i "s/version: .*/version: \"$1\"/" conda-recipe/meta.yaml
+sed -i "s/git_rev: .*/git_rev: $1/" conda-recipe/meta.yaml
+
+# Commit release
+git add pyaxiom/__init__.py
+git add conda-recipe/meta.yaml
+git commit -m "Release $1"
 
 # Tag
 git tag $1
@@ -19,10 +26,6 @@ python setup.py sdist upload
 
 # Push to Git
 git push --tags origin master
-
-# Update meta.yml
-sed -i "s/version: .*/version: \"$1\"/" conda-recipe/meta.yaml
-sed -i "s/git_rev: .*/git_rev: $1/" conda-recipe/meta.yaml
 
 # Build 2.7
 conda build -c ioos --python 2.7 conda-recipe
