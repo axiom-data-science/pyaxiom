@@ -275,7 +275,7 @@ class TimeSeries(object):
                         except AttributeError:
                             pass
 
-                    if k not in ['coordinates', '_FillValue'] and v is not None:
+                    if k not in ['name', 'coordinates', '_FillValue'] and v is not None:
                         try:
                             var.setncattr(k, v)
                         except BaseException:
@@ -305,7 +305,7 @@ class TimeSeries(object):
             var = nc.createVariable(varobject.name, varobject.dtype, dims, fill_value=fillvalue, zlib=True)
 
             for k in varobject.ncattrs():
-                if k not in ['_FillValue']:
+                if k not in ['name', '_FillValue']:
                     var.setncattr(k, varobject.getncattr(k))
             var[:] = varobject[:]
 
