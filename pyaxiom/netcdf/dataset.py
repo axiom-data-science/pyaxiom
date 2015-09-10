@@ -14,15 +14,15 @@ class EnhancedDataset(Dataset):
                 ex.  vs = nc.get_variables_by_attributes(axis='X')
             * Can pass in key=callable parameter and if the callable returns
             True.  The callable should accept a single parameter, the attribute
-            value.  None is returned as the attribute valuewhen the attribute
+            value.  None is returned as the attribute value when the attribute
             does not exist on the variable.
                 ex.
                 # Get Axis variables
-                vs = nc.get_variables_by_attributes(axis=lamdba v: v in ['X', 'Y', 'Z', 'T'])
+                vs = nc.get_variables_by_attributes(axis=lambda v: v in ['X', 'Y', 'Z', 'T'])
                 # Get variable that don't have a "axis" attribute
-                vs = nc.get_variables_by_attributes(axis=lamdba v: v is None)
+                vs = nc.get_variables_by_attributes(axis=lambda v: v is None)
                 # Get variable that have a "grid_mapping" attribute
-                vs = nc.get_variables_by_attributes(axis=lamdba v: v is not None)
+                vs = nc.get_variables_by_attributes(axis=lambda v: v is not None)
 
         """
         vs = []
