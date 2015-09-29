@@ -93,6 +93,8 @@ class TimeSeries(object):
                     nc.setncattr(k, v)
             nc.setncattr("Conventions", "CF-1.6")
             nc.setncattr("date_created", datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z"))
+            nc.setncattr("date_issued", datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z"))
+            nc.setncattr('cdm_data_type', 'Station')
 
             # Station name
             nc.createDimension("feature_type_instance", len(station_name))
@@ -109,6 +111,7 @@ class TimeSeries(object):
             lat[:] = latitude
             nc.setncattr("geospatial_lat_min", latitude)
             nc.setncattr("geospatial_lat_max", latitude)
+            nc.setncattr("geospatial_lat_units", "degrees_north")
 
             lon = nc.createVariable("longitude", "f8")
             lon.units           = "degrees_east"
@@ -117,6 +120,7 @@ class TimeSeries(object):
             lon[:] = longitude
             nc.setncattr("geospatial_lon_min", longitude)
             nc.setncattr("geospatial_lon_max", longitude)
+            nc.setncattr("geospatial_lon_units", "degrees_east")
 
             # Metadata variables
             self.crs = nc.createVariable("crs", "i4")
@@ -388,31 +392,36 @@ class TimeSeries(object):
 
             logger.debug("Setting up {}...".format(self.vertical_axis_name))
             # Figure out if we are creating a Profile or just a TimeSeries
+            nc.setncattr("geospatial_vertical_units", "meters")
+            nc.setncattr("geospatial_vertical_positive", self.vertical_positive)
             if unique_verticals.size <= 1:
                 # TIMESERIES
                 nc.setncattr("featureType", "timeSeries")
                 # Fill in variable if we have an actual height. Else, the fillvalue remains.
-                if unique_verticals.any() and unique_verticals.size == 1:
+                nc.setncattr("geospatial_vertical_resolution", '0')
+                if unique_verticals.size == 1 and not np.isnan(unique_verticals[0]) and unique_verticals[0] != self.vertical_fill:
                     # Vertical extents
-                    nc.setncattr("geospatial_vertical_positive", self.vertical_positive)
                     nc.setncattr("geospatial_vertical_min",      unique_verticals[0])
                     nc.setncattr("geospatial_vertical_max",      unique_verticals[0])
-                self.z = nc.createVariable(self.vertical_axis_name,     "f8", fill_value=self.vertical_fill)
+                self.z = nc.createVariable(self.vertical_axis_name, "f8", fill_value=self.vertical_fill)
 
             elif unique_verticals.size > 1:
                 # TIMESERIES PROFILE
                 nc.setncattr("featureType", "timeSeriesProfile")
                 # Vertical extents
-                minvertical    = float(np.min(unique_verticals))
-                maxvertical    = float(np.max(unique_verticals))
-                vertical_diffs = unique_verticals[1:] - unique_verticals[:-1]
-                nc.setncattr("geospatial_vertical_positive",   self.vertical_positive)
-                nc.setncattr("geospatial_vertical_min",        minvertical)
-                nc.setncattr("geospatial_vertical_max",        maxvertical)
-                nc.setncattr("geospatial_vertical_resolution", " ".join(map(str, list(vertical_diffs))))
+                non_nan_verticals = unique_verticals[ (~np.isnan(unique_verticals)) & (unique_verticals != self.vertical_fill) ]
+                minvertical    = float(np.min(non_nan_verticals))
+                maxvertical    = float(np.max(non_nan_verticals))
+                vertical_diffs = non_nan_verticals[1:] - non_nan_verticals[:-1]
+                nc.setncattr("geospatial_vertical_min", minvertical)
+                nc.setncattr("geospatial_vertical_max", maxvertical)
+                if vertical_diffs.size >= 1:
+                    nc.setncattr("geospatial_vertical_resolution", " ".join([ str(x) for x in list(vertical_diffs) if not np.isnan(x) ]))
+                else:
+                    nc.setncattr("geospatial_vertical_resolution", '0')
                 # There is more than one vertical value for this variable, we need to create a vertical dimension
                 nc.createDimension("z", unique_verticals.size)
-                self.z = nc.createVariable(self.vertical_axis_name,     "f8", ("z", ), fill_value=self.vertical_fill)
+                self.z = nc.createVariable(self.vertical_axis_name, "f8", ("z", ), fill_value=self.vertical_fill)
 
             self.z.grid_mapping  = 'crs'
             self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)

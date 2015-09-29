@@ -43,6 +43,22 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        # Basic metadata on all timeseries
+        self.assertEqual(nc.cdm_data_type, 'Station')
+        self.assertEqual(nc.geospatial_lat_units, 'degrees_north')
+        self.assertEqual(nc.geospatial_lon_units, 'degrees_east')
+        self.assertEqual(nc.geospatial_vertical_units, 'meters')
+        self.assertEqual(nc.geospatial_vertical_positive, 'down')
+        self.assertEqual(nc.featureType, 'timeSeries')
+        self.assertEqual(nc.geospatial_vertical_resolution, '0')
+
+        # No verticals, so these were not set
+        with self.assertRaises(AttributeError):
+            nc.geospatial_vertical_min
+        with self.assertRaises(AttributeError):
+            nc.geospatial_vertical_max
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('temperature').size == len(times)
         assert (nc.variables.get('temperature')[:] == np.asarray(values)).all()
@@ -72,6 +88,15 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        self.assertEqual(nc.geospatial_vertical_resolution, '0')
+
+        # No verticals, so these were not set
+        with self.assertRaises(AttributeError):
+            nc.geospatial_vertical_min
+        with self.assertRaises(AttributeError):
+            nc.geospatial_vertical_max
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('temperature').size == len(times)
         assert (nc.variables.get('temperature')[:] == np.asarray(values[0:6])).all()
@@ -95,6 +120,18 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        # Basic metadata on all timeseries
+        self.assertEqual(nc.cdm_data_type, 'Station')
+        self.assertEqual(nc.geospatial_lat_units, 'degrees_north')
+        self.assertEqual(nc.geospatial_lon_units, 'degrees_east')
+        self.assertEqual(nc.geospatial_vertical_units, 'meters')
+        self.assertEqual(nc.geospatial_vertical_positive, 'down')
+        self.assertEqual(nc.featureType, 'timeSeriesProfile')
+        self.assertEqual(nc.geospatial_vertical_resolution, '1 1')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 2)
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('z').positive == 'down'
@@ -123,6 +160,11 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        self.assertEqual(nc.geospatial_vertical_resolution, '1 1')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 2)
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('height').size == len(verticals)
         assert nc.variables.get('height').positive == 'up'
@@ -156,6 +198,11 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        self.assertEqual(nc.geospatial_vertical_resolution, '1 1')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 2)
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
@@ -180,6 +227,11 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        self.assertEqual(nc.geospatial_vertical_resolution, '1')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 1)
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('z').size == len(list(set(verticals)))
         assert nc.variables.get('temperature').size == len(times) * len(list(set(verticals)))
@@ -205,6 +257,11 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        self.assertEqual(nc.geospatial_vertical_resolution, '1 1')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 2)
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
@@ -230,6 +287,11 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        self.assertEqual(nc.geospatial_vertical_resolution, '0')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 0)
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
@@ -273,6 +335,11 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        self.assertEqual(nc.geospatial_vertical_resolution, '50')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 50)
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
@@ -311,6 +378,11 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        self.assertEqual(nc.geospatial_vertical_resolution, '1 1')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 2)
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
@@ -345,6 +417,11 @@ class TestTimeSeries(unittest.TestCase):
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+
+        self.assertEqual(nc.geospatial_vertical_resolution, '1 1')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 2)
+
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
