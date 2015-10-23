@@ -219,7 +219,7 @@ class TimeSeries(object):
                     # Not cool man, not cool.
                     # Reindex the entire values array.  This is slow.
                     indexed = ((bisect.bisect_left(self.time[:], times[i]), bisect.bisect_left(self.z[:], verticals[i]), values[i]) for i in range(values.size))
-                    used_values = np.ndarray((self.time.size, self.z.size, ), dtype=np.float64)
+                    used_values = np.ndarray((self.time.size, self.z.size, ), dtype=values.dtype)
                     used_values.fill(float(fillvalue))
                     for (tzi, zzi, vz) in indexed:
                         if zzi < self.z.size and tzi < self.time.size:
@@ -230,7 +230,7 @@ class TimeSeries(object):
                 if times is not None:
                     # Ugh, find the time indexes manually
                     indexed = ((bisect.bisect_left(self.time[:], times[i]), values[i]) for i in range(values.size))
-                    used_values = np.ndarray((self.time.size, ), dtype=np.float64)
+                    used_values = np.ndarray((self.time.size, ), dtype=values.dtype)
                     used_values.fill(float(fillvalue))
                     for (tzi, vz) in indexed:
                         if tzi < self.time.size:
@@ -241,7 +241,7 @@ class TimeSeries(object):
         with EnhancedDataset(self.out_file, 'a') as nc:
             logger.info("Setting values for {}...".format(variable_name))
             if len(used_values.shape) == 1:
-                var = nc.createVariable(variable_name,    "f8", ("time",), fill_value=fillvalue, chunksizes=(1000,), zlib=True)
+                var = nc.createVariable(variable_name, used_values.dtype, ("time",), fill_value=fillvalue, chunksizes=(1000,), zlib=True)
                 if self.z.size == 1:
                     var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
                 else:
@@ -266,7 +266,7 @@ class TimeSeries(object):
                                 inst_depth[:] = self.vertical_fill
 
             elif len(used_values.shape) == 2:
-                var = nc.createVariable(variable_name,    "f8", ("time", "z",), fill_value=fillvalue, chunksizes=(1000, self.z.size,), zlib=True)
+                var = nc.createVariable(variable_name, used_values.dtype, ("time", "z",), fill_value=fillvalue, chunksizes=(1000, self.z.size,), zlib=True)
                 var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
             else:
                 raise ValueError("Could not create variable.  Shape of data is {!s}.  Expected a dimension of 1 or 2, not {!s}.".format(used_values.shape, len(used_values.shape)))
