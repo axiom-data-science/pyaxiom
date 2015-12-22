@@ -1,8 +1,6 @@
 from __future__ import with_statement
-import sys
 
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
 
 from pyaxiom import __version__
 
@@ -12,18 +10,6 @@ def readme():
         return f.read()
 
 reqs = [line.strip() for line in open('requirements.txt') if not line.startswith('#')]
-
-
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import pytest
-        errno = pytest.main(self.test_args)
-        sys.exit(errno)
 
 setup(
     name                = "pyaxiom",
@@ -36,8 +22,6 @@ setup(
     url                 = "https://github.com/axiom-data-science/pyaxiom",
     packages            = find_packages(),
     install_requires    = reqs,
-    tests_require       = ['pytest'],
-    cmdclass            = {'test': PyTest},
     entry_points        = {
         'console_scripts' : [
             'binner=pyaxiom.netcdf.grids.binner:run'
