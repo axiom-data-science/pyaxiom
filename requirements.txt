@@ -5,5 +5,5 @@ netCDF4
 pandas
 
 #Optional
-#nco
+#pynco
 #pyncml
