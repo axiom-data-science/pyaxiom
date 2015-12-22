@@ -31,33 +31,33 @@ class TimeSeries(object):
         depths = df['depth'].values
         try:
             ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-            ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
+            ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=fillvalue)
         except ValueError:
             logger.warning("Failed first attempt, trying again with unique times.")
             try:
                 # Try uniquing time
                 newtimes  = np.unique(times)
                 ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
+                ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=fillvalue)
             except ValueError:
                 logger.warning("Failed second attempt, trying again with unique depths.")
                 try:
                     # Try uniquing depths
                     newdepths = np.unique(df['depth'].values)
                     ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                    ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
+                    ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=fillvalue)
                 except ValueError:
                     logger.warning("Failed third attempt, uniquing time and depth.")
                     try:
                         # Unique both time and depth
                         newdepths = np.unique(df['depth'].values)
                         ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True)
+                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=fillvalue)
                     except ValueError:
                         logger.warning("Failed fourth attempt, manually matching indexes (this is slow).")
                         # Manually match
                         ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, times=times, verticals=depths, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=False)
+                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, times=times, verticals=depths, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=False, fillvalue=fillvalue)
         return ts
 
     def __init__(self, output_directory, latitude, longitude, station_name, global_attributes, times=None, verticals=None, vertical_fill=None, output_filename=None, vertical_axis_name=None, vertical_positive=None):
