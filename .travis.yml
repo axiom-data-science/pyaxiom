@@ -36,6 +36,9 @@ install:
   # Customise the testing environment
   # ---------------------------------
   - conda install --channel ioos --file requirements.txt
-  - conda install --channel ioos nco pyncml pytest pynco
+  - conda install --channel ioos nco pyncml pytest
+  - if [[ "$TRAVIS_PYTHON_VERSION" != "3.3" ]]; then
+      conda install --channel ioos pynco
+    fi
   - conda list --export
 script: py.test -v
