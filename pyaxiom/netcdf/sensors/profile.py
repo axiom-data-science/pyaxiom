@@ -157,16 +157,17 @@ class IncompleteProfile(Profile):
             nc.createDimension('z', max_z)
 
             profile = nc.createVariable('profile', self.df.profile.dtype, ('profile',))
-            profile[:] = list(range(self.df.profile.unique().size))
+            _, unique_profile_rows = np.unique(self.df.profile.values, return_index=True)
+            profile[:] = list(range(profiles))
 
             time = nc.createVariable('time', int, ('profile',))
             time[:] = netCDF4.date2num([datetime.utcfromtimestamp(t) for t in self.df.time.unique().astype('<M8[s]').astype(int)], units=self.base_time)
 
             latitude = nc.createVariable('latitude', self.df.latitude.dtype, ('profile',))
-            latitude[:] = self.df.latitude.unique()
+            latitude[:] = self.df.latitude.values[unique_profile_rows]
 
             longitude = nc.createVariable('longitude', self.df.longitude.dtype, ('profile',))
-            longitude[:] = self.df.longitude.unique()
+            longitude[:] = self.df.longitude.values[unique_profile_rows]
 
             # Metadata variables
             nc.createVariable("crs", 'i4')
