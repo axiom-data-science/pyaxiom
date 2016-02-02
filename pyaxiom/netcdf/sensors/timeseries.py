@@ -441,7 +441,9 @@ class TimeSeries(object):
 
 
 def get_dataframe_from_variable(nc, data_var):
-    """ Returns a Pandas DataFrame of the data """
+    """ Returns a Pandas DataFrame of the data.
+        This always returns positive down depths
+    """
     time_var = nc.get_variables_by_attributes(standard_name='time')[0]
 
     depth_vars = nc.get_variables_by_attributes(axis=lambda v: v is not None and v.lower() == 'z')
@@ -474,6 +476,10 @@ def get_dataframe_from_variable(nc, data_var):
             values = data_var[:, :].flatten()
         else:
             values = data_var[:].flatten()
+
+        if getattr(depth_var, 'positive', 'down').lower() == 'up':
+            logger.warning("Converting depths to positive down before returning the DataFrame")
+            depths = depths * -1
 
     df = pd.DataFrame({ 'time':   times,
                         'value':  values,
