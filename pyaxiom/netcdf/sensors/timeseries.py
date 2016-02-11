@@ -340,8 +340,6 @@ class TimeSeries(object):
         if isinstance(verticals, (list, tuple,)) or isinstance(verticals, np.ndarray):
             verticals = np.ma.masked_values(verticals, self.vertical_fill)
 
-        # Don't unique Time... rely on the person submitting the data correctly.
-        # That means we allow duplicate times, as long as the data contains duplicate times as well.
         self.time_indexes = np.argsort(times)
         unique_times = times[self.time_indexes]
 
@@ -381,7 +379,7 @@ class TimeSeries(object):
                 time_diffs = diffs[np.bincount(inverse).argmax()]
                 nc.setncattr("time_coverage_resolution", "P%sS" % str(int(round(time_diffs))))
 
-            # Time - 32-bit unsigned integer
+            # Time
             nc.createDimension("time")
             self.time = nc.createVariable(self.time_axis_name,    "f8", ("time",), chunksizes=(1000,))
             self.time.units          = "seconds since 1970-01-01T00:00:00Z"
