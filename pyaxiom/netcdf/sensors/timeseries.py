@@ -154,7 +154,7 @@ class TimeSeries(object):
     def add_time_bounds(self, delta=None, position=None):
         with EnhancedDataset(self.out_file, 'a') as nc:
             nc.createDimension("bounds", 2)
-            time_bounds = nc.createVariable('{}_bounds'.format(self.time_axis_name), "f8", ("time", "bounds",), chunksizes=(1000, 2,))
+            time_bounds = nc.createVariable('{}_bounds'.format(self.time_axis_name), "f8", ("time", "bounds",), chunksizes=(self.time_chunk, 2,))
             time_bounds.units    = "seconds since 1970-01-01T00:00:00Z"
             time_bounds.calendar = "gregorian"
 
@@ -241,7 +241,7 @@ class TimeSeries(object):
         with EnhancedDataset(self.out_file, 'a') as nc:
             logger.info("Setting values for {}...".format(variable_name))
             if len(used_values.shape) == 1:
-                var = nc.createVariable(variable_name, used_values.dtype, ("time",), fill_value=fillvalue, chunksizes=(1000,), zlib=True)
+                var = nc.createVariable(variable_name, used_values.dtype, ("time",), fill_value=fillvalue, chunksizes=(self.time_chunk,), zlib=True)
                 if self.z.size == 1:
                     var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
                 else:
@@ -266,7 +266,7 @@ class TimeSeries(object):
                                 inst_depth[:] = self.vertical_fill
 
             elif len(used_values.shape) == 2:
-                var = nc.createVariable(variable_name, used_values.dtype, ("time", "z",), fill_value=fillvalue, chunksizes=(1000, self.z.size,), zlib=True)
+                var = nc.createVariable(variable_name, used_values.dtype, ("time", "z",), fill_value=fillvalue, chunksizes=(self.time_chunk, self.z.size,), zlib=True)
                 var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
             else:
                 raise ValueError("Could not create variable.  Shape of data is {!s}.  Expected a dimension of 1 or 2, not {!s}.".format(used_values.shape, len(used_values.shape)))
@@ -380,8 +380,9 @@ class TimeSeries(object):
                 nc.setncattr("time_coverage_resolution", "P%sS" % str(int(round(time_diffs))))
 
             # Time
+            self.time_chunk = min(unique_times.size, 1000)
             nc.createDimension("time")
-            self.time = nc.createVariable(self.time_axis_name,    "f8", ("time",), chunksizes=(1000,))
+            self.time = nc.createVariable(self.time_axis_name,    "f8", ("time",), chunksizes=(self.time_chunk,))
             self.time.units          = "seconds since 1970-01-01T00:00:00Z"
             self.time.standard_name  = "time"
             self.time.long_name      = "time of measurement"
