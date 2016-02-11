@@ -15,6 +15,15 @@ from pyaxiom import logger
 from pyaxiom.netcdf.dataset import EnhancedDataset
 
 
+def get_type(obj):
+    if hasattr(obj, 'dtype'):
+        return obj.dtype
+    elif isinstance(obj, (tuple, list)):
+        return getattr(obj[0], 'dtype', type(obj[0]))
+    else:
+        return type(obj)
+
+
 class TimeSeries(object):
 
     @staticmethod
@@ -25,39 +34,43 @@ class TimeSeries(object):
         if data_column is None:
             data_column = 'value'
 
-        df[data_column] = df[data_column].fillna(fillvalue)
+        data_fillvalue = df[data_column].values.dtype.type(fillvalue)
+        vertical_fillvalue = df['depth'].values.dtype.type(fillvalue)
+
+        df[data_column] = df[data_column].fillna(data_fillvalue)
         times = np.asarray([ calendar.timegm(x.utctimetuple()) for x in df['time'] ])
-        df['depth'] = df['depth'].fillna(fillvalue)
+        df['depth'] = df['depth'].fillna(vertical_fillvalue)
+
         depths = df['depth'].values
         try:
-            ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-            ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=fillvalue)
+            ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
+            ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue)
         except ValueError:
             logger.warning("Failed first attempt, trying again with unique times.")
             try:
                 # Try uniquing time
                 newtimes  = np.unique(times)
-                ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=fillvalue)
+                ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=depths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
+                ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue)
             except ValueError:
                 logger.warning("Failed second attempt, trying again with unique depths.")
                 try:
                     # Try uniquing depths
                     newdepths = np.unique(df['depth'].values)
-                    ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                    ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=fillvalue)
+                    ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=newdepths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
+                    ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue)
                 except ValueError:
                     logger.warning("Failed third attempt, uniquing time and depth.")
                     try:
                         # Unique both time and depth
                         newdepths = np.unique(df['depth'].values)
-                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=newdepths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=fillvalue)
+                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=newdepths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
+                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue)
                     except ValueError:
                         logger.warning("Failed fourth attempt, manually matching indexes (this is slow).")
                         # Manually match
-                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, times=times, verticals=depths, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=False, fillvalue=fillvalue)
+                        ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
+                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, times=times, verticals=depths, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=False, fillvalue=data_fillvalue)
         return ts
 
     def __init__(self, output_directory, latitude, longitude, station_name, global_attributes, times=None, verticals=None, vertical_fill=None, output_filename=None, vertical_axis_name=None, vertical_positive=None):
@@ -104,7 +117,7 @@ class TimeSeries(object):
             name[:] = list(station_name)
 
             # Location
-            lat = nc.createVariable("latitude", "f8")
+            lat = nc.createVariable("latitude", get_type(latitude))
             lat.units           = "degrees_north"
             lat.standard_name   = "latitude"
             lat.long_name       = "sensor latitude"
@@ -113,7 +126,7 @@ class TimeSeries(object):
             nc.setncattr("geospatial_lat_max", latitude)
             nc.setncattr("geospatial_lat_units", "degrees_north")
 
-            lon = nc.createVariable("longitude", "f8")
+            lon = nc.createVariable("longitude", get_type(longitude))
             lon.units           = "degrees_east"
             lon.standard_name   = "longitude"
             lon.long_name       = "sensor longitude"
@@ -139,7 +152,7 @@ class TimeSeries(object):
 
             if vertical_fill is None:
                 vertical_fill = -9999.9
-            self.vertical_fill      = vertical_fill
+            self.vertical_fill = vertical_fill
             logger.info("Created file at '{}'".format(self.out_file))
 
         self.setup_times_and_verticals(times, verticals)
@@ -190,6 +203,7 @@ class TimeSeries(object):
         # Set default fillvalue for new variables
         if fillvalue is None:
             fillvalue = -9999.9
+        fillvalue = values.dtype.type(fillvalue)
 
         used_values = None
         try:
@@ -220,8 +234,8 @@ class TimeSeries(object):
                     # Not cool man, not cool.
                     # Reindex the entire values array.  This is slow.
                     indexed = ((bisect.bisect_left(self.time[:], times[i]), bisect.bisect_left(self.z[:], verticals[i]), values[i]) for i in range(values.size))
-                    used_values = np.ndarray((self.time.size, self.z.size, ), dtype=values.dtype)
-                    used_values.fill(float(fillvalue))
+                    used_values = np.ndarray((self.time.size, self.z.size, ), dtype=get_type(values))
+                    used_values.fill(fillvalue)
                     for (tzi, zzi, vz) in indexed:
                         if zzi < self.z.size and tzi < self.time.size:
                             used_values[tzi, zzi] = vz
@@ -231,8 +245,8 @@ class TimeSeries(object):
                 if times is not None:
                     # Ugh, find the time indexes manually
                     indexed = ((bisect.bisect_left(self.time[:], times[i]), values[i]) for i in range(values.size))
-                    used_values = np.ndarray((self.time.size, ), dtype=values.dtype)
-                    used_values.fill(float(fillvalue))
+                    used_values = np.ndarray((self.time.size, ), dtype=get_type(values))
+                    used_values.fill(fillvalue)
                     for (tzi, vz) in indexed:
                         if tzi < self.time.size:
                             used_values[tzi] = vz
@@ -242,7 +256,7 @@ class TimeSeries(object):
         with EnhancedDataset(self.out_file, 'a') as nc:
             logger.info("Setting values for {}...".format(variable_name))
             if len(used_values.shape) == 1:
-                var = nc.createVariable(variable_name, used_values.dtype, ("time",), fill_value=fillvalue, chunksizes=(self.time_chunk,), zlib=True)
+                var = nc.createVariable(variable_name, get_type(used_values), ("time",), fill_value=fillvalue, chunksizes=(self.time_chunk,), zlib=True)
                 if self.z.size == 1:
                     var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
                 else:
@@ -267,7 +281,7 @@ class TimeSeries(object):
                                 inst_depth[:] = self.vertical_fill
 
             elif len(used_values.shape) == 2:
-                var = nc.createVariable(variable_name, used_values.dtype, ("time", "z",), fill_value=fillvalue, chunksizes=(self.time_chunk, self.z.size,), zlib=True)
+                var = nc.createVariable(variable_name, get_type(used_values), ("time", "z",), fill_value=fillvalue, chunksizes=(self.time_chunk, self.z.size,), zlib=True)
                 var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
             else:
                 raise ValueError("Could not create variable.  Shape of data is {!s}.  Expected a dimension of 1 or 2, not {!s}.".format(used_values.shape, len(used_values.shape)))
@@ -305,6 +319,7 @@ class TimeSeries(object):
             fillvalue = -9999.99
             if hasattr(varobject, '_FillValue'):
                 fillvalue = varobject._FillValue
+            fillvalue = varobject.dtype.type(fillvalue)
 
             dims = []
             for n in varobject.dimensions:
@@ -317,7 +332,7 @@ class TimeSeries(object):
                     nc.createDimension(d, dim_size)
                 dims.append(d)
 
-            var = nc.createVariable(varobject.name, varobject.dtype, dims, fill_value=fillvalue, zlib=True)
+            var = nc.createVariable(varobject.name, get_type(varobject), dims, fill_value=fillvalue, zlib=True)
 
             for k in varobject.ncattrs():
                 if k not in ['name', '_FillValue']:
@@ -338,7 +353,10 @@ class TimeSeries(object):
             verticals = np.ma.masked_values([self.vertical_fill], self.vertical_fill)
 
         # Convert to masked array
-        if isinstance(verticals, (list, tuple,)) or isinstance(verticals, np.ndarray):
+        if isinstance(verticals, (list, tuple)):
+            verticals = np.ma.masked_values(verticals, self.vertical_fill)
+        elif isinstance(verticals, np.ndarray):
+            self.vertical_fill = verticals.dtype.type(self.vertical_fill)
             verticals = np.ma.masked_values(verticals, self.vertical_fill)
 
         self.time_indexes = np.argsort(times)
@@ -383,7 +401,7 @@ class TimeSeries(object):
             # Time
             self.time_chunk = min(unique_times.size, 1000)
             nc.createDimension("time", unique_times.size)
-            self.time = nc.createVariable(self.time_axis_name,    "f8", ("time",), chunksizes=(self.time_chunk,))
+            self.time = nc.createVariable(self.time_axis_name, get_type(unique_times), ("time",), chunksizes=(self.time_chunk,))
             self.time.units          = "seconds since 1970-01-01T00:00:00Z"
             self.time.standard_name  = "time"
             self.time.long_name      = "time of measurement"
@@ -403,7 +421,7 @@ class TimeSeries(object):
                     # Vertical extents
                     nc.setncattr("geospatial_vertical_min",      unique_verticals[0])
                     nc.setncattr("geospatial_vertical_max",      unique_verticals[0])
-                self.z = nc.createVariable(self.vertical_axis_name, "f8", fill_value=self.vertical_fill)
+                self.z = nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), fill_value=self.vertical_fill)
 
             elif unique_verticals.size > 1:
                 # TIMESERIES PROFILE
@@ -421,7 +439,7 @@ class TimeSeries(object):
                     nc.setncattr("geospatial_vertical_resolution", '0')
                 # There is more than one vertical value for this variable, we need to create a vertical dimension
                 nc.createDimension("z", unique_verticals.size)
-                self.z = nc.createVariable(self.vertical_axis_name, "f8", ("z", ), fill_value=self.vertical_fill)
+                self.z = nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), ("z", ), fill_value=self.vertical_fill)
 
             self.z.grid_mapping  = 'crs'
             self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)
@@ -463,13 +481,16 @@ def get_dataframe_from_variable(nc, data_var):
     original_times_size = times.size
 
     if depth_var is None and hasattr(data_var, 'sensor_depth'):
+        depth_type = get_type(data_var.sensor_depth)
         depths = np.asarray([data_var.sensor_depth] * len(times)).flatten()
         values = data_var[:].flatten()
     elif depth_var is None:
         depths = np.asarray([np.nan] * len(times)).flatten()
+        depth_type = get_type(depths)
         values = data_var[:].flatten()
     else:
         depths = depth_var[:]
+        depth_type = get_type(depths)
         if len(data_var.shape) > 1:
             times = np.repeat(times, depths.size)
             depths = np.tile(depths, original_times_size)
@@ -482,8 +503,9 @@ def get_dataframe_from_variable(nc, data_var):
             depths = depths * -1
 
     df = pd.DataFrame({ 'time':   times,
-                        'value':  values,
+                        'value':  values.astype(data_var.dtype),
                         'unit':   data_var.units,
-                        'depth':  depths })
+                        'depth':  depths.astype(depth_type) })
+
     df.set_index([pd.DatetimeIndex(df['time']), pd.Float64Index(df['depth'])], inplace=True)
     return df
