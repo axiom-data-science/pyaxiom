@@ -381,7 +381,7 @@ class TimeSeries(object):
 
             # Time
             self.time_chunk = min(unique_times.size, 1000)
-            nc.createDimension("time")
+            nc.createDimension("time", unique_times.size)
             self.time = nc.createVariable(self.time_axis_name,    "f8", ("time",), chunksizes=(self.time_chunk,))
             self.time.units          = "seconds since 1970-01-01T00:00:00Z"
             self.time.standard_name  = "time"
