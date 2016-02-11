@@ -140,9 +140,10 @@ class TimeSeries(object):
             if vertical_fill is None:
                 vertical_fill = -9999.9
             self.vertical_fill      = vertical_fill
-
-            self.setup_times_and_verticals(times, verticals)
             logger.info("Created file at '{}'".format(self.out_file))
+
+        self.setup_times_and_verticals(times, verticals)
+        logger.info("Setup time and z in '{}'".format(self.out_file))
 
     def add_instrument_metadata(self, urn):
         with EnhancedDataset(self.out_file, 'a') as nc:
