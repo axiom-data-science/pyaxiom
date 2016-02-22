@@ -44,8 +44,8 @@ def dictify_urn(urn, combine_interval=True):
 
     # Discriminant
     if '-' in ioos_urn.component:
-        d['discriminant'] = ioos_urn.component.split('-')[-1]
-        d['standard_name'] = ioos_urn.component.split('-')[0]
+        d['discriminant'] = standard_name.split('-')[-1]
+        d['standard_name'] = standard_name.split('-')[0]
 
     intervals = []
     cell_methods = []

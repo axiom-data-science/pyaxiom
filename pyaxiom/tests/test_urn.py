@@ -304,6 +304,29 @@ class TestUrnUtils(unittest.TestCase):
         assert 'interval' not in d
         assert 'cell_methods' not in d
 
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean_over_years,time:minimum_within_years;vertical_datum=navd88'
+        d = dictify_urn(urn)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: mean over years time: minimum within years'
+        assert d['discriminant'] == '2'
+        assert d['vertical_datum'] == 'NAVD88'
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean_over_years,time:minimum_within_years;interval=pt1h;vertical_datum=navd88'
+        d = dictify_urn(urn)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: mean over years time: minimum within years (interval: PT1H)'
+        assert d['discriminant'] == '2'
+        assert 'interval' not in d
+        assert d['vertical_datum'] == 'NAVD88'
+
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean_over_years,time:minimum_within_years;interval=pt1h;vertical_datum=navd88'
+        d = dictify_urn(urn, combine_interval=False)
+        assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
+        assert d['cell_methods'] == 'time: mean over years time: minimum within years'
+        assert d['discriminant'] == '2'
+        assert d['interval'] == 'PT1H'
+        assert d['vertical_datum'] == 'NAVD88'
+
         urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#interval=pt2h'
         # Cant have an interval without a cell_method
         with self.assertRaises(ValueError):
