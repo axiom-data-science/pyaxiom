@@ -138,6 +138,7 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('z').positive == 'down'
+        assert nc.variables.get('z')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
 
@@ -172,6 +173,7 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('height').size == len(verticals)
         assert nc.variables.get('height').positive == 'up'
+        assert nc.variables.get('height')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
 
@@ -240,6 +242,7 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(list(set(verticals)))
+        assert nc.variables.get('z')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times) * len(list(set(verticals)))
 
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), 2))).all()
@@ -302,6 +305,7 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
+        assert nc.variables.get('z')[:].dtype == np.float64
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
 
         assert nc.variables.get('temperature')[:][0][1] == 20
@@ -351,6 +355,7 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
+        assert nc.variables.get('z')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
 
         assert nc.variables.get('temperature')[:][0][0] == 25
@@ -395,6 +400,7 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
+        assert nc.variables.get('z')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert nc.variables.get('sensor_depth') is not None
         assert nc.variables.get('bottom_temperature').size == len(times)
@@ -435,6 +441,7 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
+        assert nc.variables.get('z')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
         assert (nc.variables.get('salinity')[:] == values.reshape((len(times), len(verticals)))).all()

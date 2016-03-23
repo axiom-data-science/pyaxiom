@@ -185,10 +185,21 @@ class TimeSeries(object):
 
         if isinstance(values, (list, tuple,)) and values:
             values = np.asarray(values)
+        if get_type(values) == np.int64:
+            # Create time as int32 because DAP does not support int64 until DAP4.
+            values = values.astype(np.int32)
+
         if isinstance(times, (list, tuple,)) and times:
             times = np.asarray(times)
+        if get_type(times) == np.int64:
+            # Create time as int32 because DAP does not support int64 until DAP4.
+            times = times.astype(np.int32)
+
         if isinstance(verticals, (list, tuple,)) and verticals:
             verticals = np.asarray(verticals)
+        if get_type(verticals) == np.int64:
+            # Create time as int32 because DAP does not support int64 until DAP4.
+            verticals = verticals.astype(np.int32)
 
         # Set vertical datum on the CRS variable
         if sensor_vertical_datum is not None:
@@ -346,8 +357,10 @@ class TimeSeries(object):
 
         if isinstance(times, (list, tuple,)):
             times = np.asarray(times)
-        # Create time as int32 because DAP does not support int64 until DAP4.
-        times = times.astype(np.int32)
+        if get_type(times) == np.int64:
+            # Create time as int32 because DAP does not support int64 until DAP4.
+            logger.info(times.dtype)
+            times = times.astype(np.int32)
 
         # If nothing is passed in, set to the vertical_fill value.
         if not isinstance(verticals, np.ndarray) and not verticals:
@@ -359,6 +372,9 @@ class TimeSeries(object):
         elif isinstance(verticals, np.ndarray):
             self.vertical_fill = verticals.dtype.type(self.vertical_fill)
             verticals = np.ma.masked_values(verticals, self.vertical_fill)
+        if get_type(verticals) == np.int64:
+            # Create time as int32 because DAP does not support int64 until DAP4.
+            verticals = verticals.astype(np.int32)
 
         self.time_indexes = np.argsort(times)
         unique_times = times[self.time_indexes]
