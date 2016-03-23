@@ -265,7 +265,7 @@ class TimeSeries(object):
                         # Create metadata variable for the sensor_depth
                         if nc.variables.get('sensor_depth') is None:
                             logger.info("Setting the special case 'sensor_depth' metadata variable")
-                            inst_depth = nc.createVariable('sensor_depth', 'f4')
+                            inst_depth = nc.createVariable('sensor_depth', get_type(verticals))
                             inst_depth.units = 'm'
                             inst_depth.standard_name = 'surface_altitude'
                             inst_depth.positive = self.vertical_positive
