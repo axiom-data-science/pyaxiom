@@ -60,6 +60,7 @@ class TestTimeSeries(unittest.TestCase):
             nc.geospatial_vertical_max
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times)
         assert (nc.variables.get('temperature')[:] == np.asarray(values)).all()
 
@@ -98,6 +99,7 @@ class TestTimeSeries(unittest.TestCase):
             nc.geospatial_vertical_max
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times)
         assert (nc.variables.get('temperature')[:] == np.asarray(values[0:6])).all()
 
@@ -133,6 +135,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_vertical_max, 2)
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('z').positive == 'down'
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
@@ -166,6 +169,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_vertical_max, 2)
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('height').size == len(verticals)
         assert nc.variables.get('height').positive == 'up'
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
@@ -204,6 +208,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_vertical_max, 2)
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == np.repeat([20, 21, 22, 23, 24, 25], len(verticals)).reshape((len(times), len(verticals)))).all()
@@ -233,6 +238,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_vertical_max, 1)
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(list(set(verticals)))
         assert nc.variables.get('temperature').size == len(times) * len(list(set(verticals)))
 
@@ -263,6 +269,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_vertical_max, 2)
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
@@ -293,6 +300,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_vertical_max, 0)
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
 
@@ -341,6 +349,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_vertical_max, 50)
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
 
@@ -384,6 +393,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_vertical_max, 2)
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert nc.variables.get('sensor_depth') is not None
@@ -423,6 +433,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_vertical_max, 2)
 
         assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()

@@ -346,6 +346,8 @@ class TimeSeries(object):
 
         if isinstance(times, (list, tuple,)):
             times = np.asarray(times)
+        # Create time as int32 because DAP does not support int64 until DAP4.
+        times = times.astype(np.int32)
 
         # If nothing is passed in, set to the vertical_fill value.
         if not isinstance(verticals, np.ndarray) and not verticals:
