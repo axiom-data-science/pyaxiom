@@ -305,22 +305,22 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
 
         assert nc.variables.get('temperature')[:][0][1] == 20
-        assert nc.variables.get('temperature')[:].mask[0][0] == True
+        assert nc.variables.get('temperature')[:].mask[0][0] == True  # noqa
 
         assert nc.variables.get('temperature')[:][1][1] == 21
-        assert nc.variables.get('temperature')[:].mask[1][0] == True
+        assert nc.variables.get('temperature')[:].mask[1][0] == True  # noqa
 
         assert nc.variables.get('temperature')[:][2][1] == 22
-        assert nc.variables.get('temperature')[:].mask[2][0] == True
+        assert nc.variables.get('temperature')[:].mask[2][0] == True  # noqa
 
         assert nc.variables.get('temperature')[:][3][1] == 23
-        assert nc.variables.get('temperature')[:].mask[3][0] == True
+        assert nc.variables.get('temperature')[:].mask[3][0] == True  # noqa
 
         assert nc.variables.get('temperature')[:][4][1] == 24
-        assert nc.variables.get('temperature')[:].mask[4][0] == True
+        assert nc.variables.get('temperature')[:].mask[4][0] == True  # noqa
 
         assert nc.variables.get('temperature')[:][5][1] == 25
-        assert nc.variables.get('temperature')[:].mask[5][0] == True
+        assert nc.variables.get('temperature')[:].mask[5][0] == True  # noqa
 
         assert (nc.variables.get('temperature')[:] == np.asarray(values).reshape((len(times), len(verticals)))).all()
 
