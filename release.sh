@@ -44,3 +44,12 @@ for f in conda-recipe/py34/**/$NAME*; do
     anaconda upload -u $ORG --force $f
 done
 rm -r conda-recipe/py34
+
+# Build 3.5
+conda build -c ioos --python 3.5 conda-recipe
+PACKAGE_PATH=`ls ~/miniconda3/conda-bld/**/$NAME*-$1-py35*.tar.bz2`
+conda convert --platform all $PACKAGE_PATH -o conda-recipe/py35
+for f in conda-recipe/py35/**/$NAME*; do
+    anaconda upload -u $ORG --force $f
+done
+rm -r conda-recipe/py35
