@@ -1,7 +1,7 @@
 numpy
 pytz
 python-dateutil
-netCDF4
+netCDF4>=1.2.0
 pandas
 
 #Optional
