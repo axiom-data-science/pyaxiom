@@ -472,7 +472,8 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('z')[:].dtype == np.float64
-        assert np.isclose(nc.variables.get('z')[:], np.ma.array([np.nan], mask=[1]))
+        assert nc.variables.get('z')[:].size == 1
+        assert nc.variables.get('z')[:].mask == True  # noqa
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
 
         df = get_dataframe_from_variable(nc, nc.variables.get('temperature'))
