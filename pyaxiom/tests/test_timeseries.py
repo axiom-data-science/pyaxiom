@@ -472,9 +472,11 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('z').size == len(verticals)
         assert nc.variables.get('z')[:].dtype == np.float64
-        logger.info(nc.variables.get('z')[:])
         assert np.isclose(nc.variables.get('z')[:], np.ma.array([np.nan], mask=[1]))
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
+
+        df = get_dataframe_from_variable(nc, nc.variables.get('temperature'))
+        assert df['depth'].dropna().empty
 
     def test_extracting_dataframe_some_masked_heights(self):
         filename = 'test_extracting_dataframe_some_masked_heights.nc'
@@ -503,6 +505,9 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('z')[:].dtype == np.float64
         assert np.allclose(nc.variables.get('z')[:], np.ma.array([np.nan, 7.8, 7.9], mask=[1, 0, 0]))
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
+
+        df = get_dataframe_from_variable(nc, nc.variables.get('temperature'))
+        assert not df['depth'].dropna().empty
 
     def test_extracting_dataframe_ordered_masked_heights(self):
         filename = 'test_extracting_dataframe_ordered_masked_heights.nc'
@@ -541,6 +546,9 @@ class TestTimeSeries(unittest.TestCase):
         assert np.isclose(nc.variables.get('temperature')[:][3][0], 31)
         assert np.isclose(nc.variables.get('temperature')[:][4][0], 33)
         assert np.isclose(nc.variables.get('temperature')[:][5][0], 35)
+
+        df = get_dataframe_from_variable(nc, nc.variables.get('temperature'))
+        assert not df['depth'].dropna().empty
 
 
 class TestTimeseriesTimeBounds(unittest.TestCase):
