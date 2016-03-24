@@ -359,7 +359,6 @@ class TimeSeries(object):
             times = np.asarray(times)
         if get_type(times) == np.int64:
             # Create time as int32 because DAP does not support int64 until DAP4.
-            logger.info(times.dtype)
             times = times.astype(np.int32)
 
         # If nothing is passed in, set to the vertical_fill value.

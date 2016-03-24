@@ -644,6 +644,4 @@ class TestDataFrameFromVariable(unittest.TestCase):
         ncvar1 = ncd1.variables['soil_moisture_percent']
         df1 = get_dataframe_from_variable(ncd1, ncvar1)
 
-        logger.info(df1.depth.unique())
-
         assert np.allclose(df1.depth.unique(), np.asarray([-0.0508, -0.2032, -0.508]))
