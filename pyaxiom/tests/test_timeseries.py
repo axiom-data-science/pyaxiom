@@ -447,6 +447,101 @@ class TestTimeSeries(unittest.TestCase):
         assert (nc.variables.get('salinity')[:] == values.reshape((len(times), len(verticals)))).all()
         assert nc.variables.get('dissolved_oxygen')[:].mask.all()
 
+    def test_extracting_dataframe_all_masked_heights(self):
+        filename = 'test_extracting_dataframe_all_masked_heights.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = [-9999.9]
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=self.global_attributes,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals,
+                        vertical_fill=-9999.9)
+
+        values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals))
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+
+        assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
+        assert nc.variables.get('z').size == len(verticals)
+        assert nc.variables.get('z')[:].dtype == np.float64
+        logger.info(nc.variables.get('z')[:])
+        assert np.isclose(nc.variables.get('z')[:], np.ma.array([np.nan], mask=[1]))
+        assert nc.variables.get('temperature').size == len(times) * len(verticals)
+
+    def test_extracting_dataframe_some_masked_heights(self):
+        filename = 'test_extracting_dataframe_some_masked_heights.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = [-9999.9, 7.8, 7.9]
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=self.global_attributes,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals,
+                        vertical_fill=-9999.9)
+
+        values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals))
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+
+        assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
+        assert nc.variables.get('z').size == len(verticals)
+        assert nc.variables.get('z')[:].dtype == np.float64
+        assert np.allclose(nc.variables.get('z')[:], np.ma.array([np.nan, 7.8, 7.9], mask=[1, 0, 0]))
+        assert nc.variables.get('temperature').size == len(times) * len(verticals)
+
+    def test_extracting_dataframe_ordered_masked_heights(self):
+        filename = 'test_extracting_dataframe_ordered_masked_heights.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = [np.nan, 7.8]
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=self.global_attributes,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals,
+                        vertical_fill=np.nan)
+
+        values = np.asarray([[20, 21], [22, 23], [24, 25], [30, 31], [32, 33], [34, 35]])
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+
+        assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
+        assert nc.variables.get('z').size == len(verticals)
+        assert nc.variables.get('z')[:].dtype == np.float64
+
+        # The height order is sorted!
+        assert np.allclose(nc.variables.get('z')[:], np.ma.array([7.8, np.nan], mask=[0, 1]))
+        assert nc.variables.get('temperature').size == len(times) * len(verticals)
+
+        # Be sure the values are re-arranged because the height order is sorted!
+        assert np.isclose(nc.variables.get('temperature')[:][0][0], 21)
+        assert np.isclose(nc.variables.get('temperature')[:][1][0], 23)
+        assert np.isclose(nc.variables.get('temperature')[:][2][0], 25)
+        assert np.isclose(nc.variables.get('temperature')[:][3][0], 31)
+        assert np.isclose(nc.variables.get('temperature')[:][4][0], 33)
+        assert np.isclose(nc.variables.get('temperature')[:][5][0], 35)
+
 
 class TestTimeseriesTimeBounds(unittest.TestCase):
 

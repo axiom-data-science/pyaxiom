@@ -519,6 +519,11 @@ def get_dataframe_from_variable(nc, data_var):
             logger.warning("Converting depths to positive down before returning the DataFrame")
             depths = depths * -1
 
+    # https://github.com/numpy/numpy/issues/4595
+    # We can't call astype on a MaskedConstant
+    if hasattr(depths, 'mask') and depths.mask.all():
+        depths.fill(np.nan)
+
     df = pd.DataFrame({ 'time':   times,
                         'value':  values.astype(data_var.dtype),
                         'unit':   data_var.units,
