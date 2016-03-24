@@ -526,7 +526,7 @@ def get_dataframe_from_variable(nc, data_var):
 
     df = pd.DataFrame({ 'time':   times,
                         'value':  values.astype(data_var.dtype),
-                        'unit':   data_var.units,
+                        'unit':   data_var.units if hasattr(data_var, 'units') else np.nan,
                         'depth':  depths.astype(depth_type) })
 
     df.set_index([pd.DatetimeIndex(df['time']), pd.Float64Index(df['depth'])], inplace=True)
