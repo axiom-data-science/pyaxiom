@@ -98,16 +98,23 @@ class TimeSeries(object):
             global_skips = ["time_coverage_start", "time_coverage_end", "time_coverage_duration", "time_coverage_resolution",
                             "featureType", "geospatial_vertical_positive", "geospatial_vertical_min", "geospatial_vertical_max",
                             "geospatial_lat_min", "geospatial_lon_min", "geospatial_lat_max", "geospatial_lon_max",
-                            "geospatial_vertical_resolution", "Conventions", "date_created"]
+                            "geospatial_vertical_resolution", "Conventions", "Metadata_Conventions", "date_created"]
             for k, v in global_attributes.items():
                 if v is None:
                     v = "None"
                 if k not in global_skips:
                     nc.setncattr(k, v)
+
+            now_date = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z")
             nc.setncattr("Conventions", "CF-1.6")
-            nc.setncattr("date_created", datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z"))
-            nc.setncattr("date_issued", datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z"))
+            nc.setncattr("Metadata_Conventions", "Unidata Dataset Discovery v1.0")
+            nc.setncattr("date_created", now_date)
+            nc.setncattr("date_issued", now_date)
             nc.setncattr('cdm_data_type', 'Station')
+
+            history_list = getattr(nc, 'history', '').split('\n')
+            history_list.append('{} - {} - {}'.format(now_date, 'pyaxiom', 'File created using pyaxiom'))
+            nc.setncattr('history', '\n'.join([ x for x in history_list if x ]))
 
             # Station name
             nc.createDimension("feature_type_instance", len(station_name))
