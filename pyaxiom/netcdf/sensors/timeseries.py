@@ -75,7 +75,7 @@ class TimeSeries(object):
 
     def __init__(self, output_directory, latitude, longitude, station_name, global_attributes, times=None, verticals=None, vertical_fill=None, output_filename=None, vertical_axis_name=None, vertical_positive=None):
         if output_filename is None:
-            output_filename = '{}_{}.nc'.format(station_name, int(random.random()*100000))
+            output_filename = '{}_{}.nc'.format(station_name, int(random.random() * 100000))
             logger.info("No output filename specified, saving as {}".format(output_filename))
 
         self.vertical_positive  = vertical_positive or 'down'
@@ -177,7 +177,7 @@ class TimeSeries(object):
             if position == "start":
                 time_bounds[:] = np.asarray(list(zip(self.time[:], netCDF4.date2num(time_objs + delta, **bounds_kwargs))))
             elif position == "middle":
-                time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta/2, **bounds_kwargs), netCDF4.date2num(time_objs + delta/2, **bounds_kwargs))))
+                time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta / 2, **bounds_kwargs), netCDF4.date2num(time_objs + delta / 2, **bounds_kwargs))))
             elif position == "end":
                 time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta, **bounds_kwargs), self.time[:])))
 
