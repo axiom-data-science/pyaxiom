@@ -1,5 +1,6 @@
 import os
 import unittest
+from copy import copy
 from datetime import timedelta
 
 import numpy as np
@@ -10,6 +11,7 @@ from pyaxiom.netcdf.sensors import TimeSeries, get_dataframe_from_variable
 
 import logging
 from pyaxiom import logger
+from pyaxiom.utils import urnify
 logger.level = logging.INFO
 logger.addHandler(logging.StreamHandler())
 
@@ -550,6 +552,124 @@ class TestTimeSeries(unittest.TestCase):
 
         df = get_dataframe_from_variable(nc, nc.variables.get('temperature'))
         assert not df['depth'].dropna().empty
+
+    def test_instrumnet_metadata_variable(self):
+        filename = 'test_timeseries.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = None
+
+        gats = copy(self.global_attributes)
+        gats['naming_authority'] = 'pyaxiom'
+
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=gats,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals)
+
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs, create_instrument_variable=True)
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+
+        datavar = nc.variables.get('temperature')
+        logger.info(datavar.ncattrs())
+        instrument_var_name = datavar.instrument
+
+        instvar = nc.variables[instrument_var_name]
+        assert instvar.short_name == 'sea_water_temperature'
+        assert instvar.long_name == urnify(gats['naming_authority'], gats['id'], attrs)
+        assert instvar.ioos_code == urnify(gats['naming_authority'], gats['id'], attrs)
+
+    def test_history_empty(self):
+        filename = 'test_history_append.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = None
+
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=self.global_attributes,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals)
+
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+
+        history = nc.history.split('\n')
+        assert len(history) == 1
+        assert 'File created using pyaxiom' in history[0]
+        assert '\n' not in history[0]
+
+    def test_history_append_to_string(self):
+        filename = 'test_history_append.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = None
+
+        gats = copy(self.global_attributes)
+        gats['history'] = 'this is some history'
+
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=gats,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals)
+
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+
+        history = nc.history.split('\n')
+        assert len(history) == 2
+        assert history[0] == 'this is some history'
+        assert 'File created using pyaxiom' in history[1]
+
+    def test_history_append_to_list(self):
+        filename = 'test_history_append.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = None
+        gats = copy(self.global_attributes)
+
+        gats['history'] = 'this is some history\nsome other history\nsome more'
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=self.station_name,
+                        global_attributes=gats,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals)
+
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+
+        history = nc.history.split('\n')
+        assert len(history) == 4
+        assert history[0] == 'this is some history'
+        assert history[1] == 'some other history'
+        assert history[2] == 'some more'
+        assert 'File created using pyaxiom' in history[3]
 
 
 class TestTimeseriesTimeBounds(unittest.TestCase):

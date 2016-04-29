@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 
 from pyaxiom import logger
+from pyaxiom.urn import IoosUrn
+from pyaxiom.utils import urnify
 from pyaxiom.netcdf.dataset import EnhancedDataset
 
 
@@ -27,7 +29,7 @@ def get_type(obj):
 class TimeSeries(object):
 
     @staticmethod
-    def from_dataframe(df, output_directory, output_filename, latitude, longitude, station_name, global_attributes, variable_name, variable_attributes, sensor_vertical_datum=None, fillvalue=None, data_column=None, vertical_axis_name=None, vertical_positive=None):
+    def from_dataframe(df, output_directory, output_filename, latitude, longitude, station_name, global_attributes, variable_name, variable_attributes, sensor_vertical_datum=None, fillvalue=None, data_column=None, vertical_axis_name=None, vertical_positive=None, create_instrument_variable=False):
 
         if fillvalue is None:
             fillvalue = -9999.9
@@ -44,33 +46,33 @@ class TimeSeries(object):
         depths = df['depth'].values
         try:
             ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-            ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue)
+            ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue, create_instrument_variable=create_instrument_variable)
         except ValueError:
             logger.warning("Failed first attempt, trying again with unique times.")
             try:
                 # Try uniquing time
                 newtimes  = np.unique(times)
                 ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=depths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue)
+                ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue, create_instrument_variable=create_instrument_variable)
             except ValueError:
                 logger.warning("Failed second attempt, trying again with unique depths.")
                 try:
                     # Try uniquing depths
                     newdepths = np.unique(df['depth'].values)
                     ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=newdepths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                    ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue)
+                    ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue, create_instrument_variable=create_instrument_variable)
                 except ValueError:
                     logger.warning("Failed third attempt, uniquing time and depth.")
                     try:
                         # Unique both time and depth
                         newdepths = np.unique(df['depth'].values)
                         ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=newtimes, verticals=newdepths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue)
+                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=True, fillvalue=data_fillvalue, create_instrument_variable=create_instrument_variable)
                     except ValueError:
                         logger.warning("Failed fourth attempt, manually matching indexes (this is slow).")
                         # Manually match
                         ts = TimeSeries(output_directory, latitude, longitude, station_name, global_attributes, times=times, verticals=depths, output_filename=output_filename, vertical_fill=vertical_fillvalue, vertical_axis_name=vertical_axis_name, vertical_positive=vertical_positive)
-                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, times=times, verticals=depths, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=False, fillvalue=data_fillvalue)
+                        ts.add_variable(variable_name, df[data_column].values, attributes=variable_attributes, times=times, verticals=depths, sensor_vertical_datum=sensor_vertical_datum, raise_on_error=False, fillvalue=data_fillvalue, create_instrument_variable=create_instrument_variable)
         return ts
 
     def __init__(self, output_directory, latitude, longitude, station_name, global_attributes, times=None, verticals=None, vertical_fill=None, output_filename=None, vertical_axis_name=None, vertical_positive=None):
@@ -151,11 +153,18 @@ class TimeSeries(object):
             self.crs.inverse_flattening  = float(298.257223563)
 
             platform = nc.createVariable("platform", "i4")
-            platform.ioos_code      = station_name
-            platform.short_name     = global_attributes.get("title", station_name)
-            platform.long_name      = global_attributes.get("description", station_name)
-            platform.definition     = "http://mmisw.org/ont/ioos/definition/stationID"
             nc.setncattr('platform', 'platform')
+            platform.definition = "http://mmisw.org/ont/ioos/definition/stationID"
+
+            urn = IoosUrn.from_string(station_name)
+            if urn.valid() is True:
+                platform.short_name = urn.label
+                platform.long_name = urn.urn
+                platform.ioos_code = urn.urn
+            else:
+                platform.short_name = global_attributes.get("title", station_name)
+                platform.long_name = global_attributes.get("description", station_name)
+                platform.ioos_code = station_name
 
             if vertical_fill is None:
                 vertical_fill = -9999.9
@@ -170,6 +179,30 @@ class TimeSeries(object):
             instrument.definition = "http://mmisw.org/ont/ioos/definition/sensorID"
             instrument.long_name = urn
             instrument.ioos_code = urn
+            nc.instrument = 'instrument'
+
+    def add_instrument_variable(self, variable_name):
+        with EnhancedDataset(self.out_file, 'a') as nc:
+            if variable_name not in nc.variables:
+                logger.error("Variable {} not found in file, cannot create instrument metadata variable")
+                return
+            elif 'id' not in nc.ncattrs() or 'naming_authority' not in nc.ncattrs():
+                logger.error("Global attributes 'id' and 'naming_authority' are required to create an instrumnet variable")
+                return
+
+            instr_var_name = "{}_instrument".format(variable_name)
+            instrument = nc.createVariable(instr_var_name, "i4")
+
+            datavar = nc.variables[variable_name]
+            vats = { k: getattr(datavar, k) for k in datavar.ncattrs() }
+            instrument_urn = urnify(nc.naming_authority, nc.id, vats)
+
+            instrument.long_name = instrument_urn
+            instrument.ioos_code = instrument_urn
+            instrument.short_name = IoosUrn.from_string(instrument_urn).component
+            instrument.definition = "http://mmisw.org/ont/ioos/definition/sensorID"
+
+            datavar.instrument = instr_var_name
 
     def add_time_bounds(self, delta=None, position=None):
         with EnhancedDataset(self.out_file, 'a') as nc:
@@ -188,7 +221,7 @@ class TimeSeries(object):
             elif position == "end":
                 time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta, **bounds_kwargs), self.time[:])))
 
-    def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None, raise_on_error=False):
+    def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None, raise_on_error=False, create_instrument_variable=False):
 
         if isinstance(values, (list, tuple,)) and values:
             values = np.asarray(values)
@@ -322,9 +355,13 @@ class TimeSeries(object):
                             logger.info('Could not add attribute {}: {}, skipping.'.format(k, v))
 
             var.grid_mapping = 'crs'
+            var.platform = 'platform'
             var[:] = used_values
 
-            return var
+        if create_instrument_variable is True:
+            self.add_instrument_variable(variable_name)
+
+        return var
 
     def add_variable_object(self, varobject, dimension_map=None, reduce_dims=None):
 
