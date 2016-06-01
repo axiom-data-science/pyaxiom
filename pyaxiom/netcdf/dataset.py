@@ -55,7 +55,6 @@ class EnhancedDataset(Dataset):
     def close(self):
         try:
             self.sync()
-            self.close()
         except RuntimeError:
             pass
 
@@ -67,6 +66,5 @@ class EnhancedMFDataset(MFDataset, EnhancedDataset):
     def close(self):
         try:
             self.sync()
-            self.close()
         except RuntimeError:
             pass
