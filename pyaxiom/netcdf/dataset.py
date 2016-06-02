@@ -4,9 +4,6 @@ from netCDF4 import Dataset, MFDataset
 
 
 class EnhancedDataset(Dataset):
-    def __init__(self, *args, **kwargs):
-        super(EnhancedDataset, self).__init__(*args, **kwargs)
-
     def get_variables_by_attributes(self, **kwargs):
         """ Returns variables that match specific conditions.
 
