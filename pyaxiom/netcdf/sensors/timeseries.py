@@ -443,79 +443,79 @@ class TimeSeries(object):
         starting = datetime.utcfromtimestamp(unique_times[0])
         ending   = datetime.utcfromtimestamp(unique_times[-1])
 
-        with EnhancedDataset(self.out_file, 'a') as nc:
-            logger.debug("Setting up time...")
-            # Time extents
-            nc.setncattr("time_coverage_start",    starting.isoformat())
-            nc.setncattr("time_coverage_end",      ending.isoformat())
-            # duration (ISO8601 format)
-            nc.setncattr("time_coverage_duration", "P%sS" % str(int(round((ending - starting).total_seconds()))))
-            # resolution (ISO8601 format)
-            # subtract adjacent times to produce an array of differences, then get the most common occurance
-            diffs = unique_times[1:] - unique_times[:-1]
-            uniqs, inverse = np.unique(diffs, return_inverse=True)
-            if uniqs.size > 1:
-                time_diffs = diffs[np.bincount(inverse).argmax()]
-                nc.setncattr("time_coverage_resolution", "P%sS" % str(int(round(time_diffs))))
+        nc = EnhancedDataset(self.out_file, 'a')
 
-            # Time
-            self.time_chunk = min(unique_times.size, 1000)
-            nc.createDimension("time", unique_times.size)
-            self.time = nc.createVariable(self.time_axis_name, get_type(unique_times), ("time",), chunksizes=(self.time_chunk,))
-            self.time.units          = "seconds since 1970-01-01T00:00:00Z"
-            self.time.standard_name  = "time"
-            self.time.long_name      = "time of measurement"
-            self.time.calendar       = "gregorian"
-            self.time[:] = unique_times
+        logger.debug("Setting up time...")
+        # Time extents
+        nc.setncattr("time_coverage_start",    starting.isoformat())
+        nc.setncattr("time_coverage_end",      ending.isoformat())
+        # duration (ISO8601 format)
+        nc.setncattr("time_coverage_duration", "P%sS" % str(int(round((ending - starting).total_seconds()))))
+        # resolution (ISO8601 format)
+        # subtract adjacent times to produce an array of differences, then get the most common occurance
+        diffs = unique_times[1:] - unique_times[:-1]
+        uniqs, inverse = np.unique(diffs, return_inverse=True)
+        if uniqs.size > 1:
+            time_diffs = diffs[np.bincount(inverse).argmax()]
+            nc.setncattr("time_coverage_resolution", "P%sS" % str(int(round(time_diffs))))
 
-            logger.debug("Setting up {}...".format(self.vertical_axis_name))
-            # Figure out if we are creating a Profile or just a TimeSeries
-            nc.setncattr("geospatial_vertical_units", "meters")
-            nc.setncattr("geospatial_vertical_positive", self.vertical_positive)
-            if unique_verticals.size <= 1:
-                # TIMESERIES
-                nc.setncattr("featureType", "timeSeries")
-                # Fill in variable if we have an actual height. Else, the fillvalue remains.
-                nc.setncattr("geospatial_vertical_resolution", '0')
-                if unique_verticals.size == 1 and not np.isnan(unique_verticals[0]) and unique_verticals[0] != self.vertical_fill:
-                    # Vertical extents
-                    nc.setncattr("geospatial_vertical_min",      unique_verticals[0])
-                    nc.setncattr("geospatial_vertical_max",      unique_verticals[0])
-                self.z = nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), fill_value=self.vertical_fill)
+        # Time
+        self.time_chunk = min(unique_times.size, 1000)
+        nc.createDimension("time", unique_times.size)
+        self.time = nc.createVariable(self.time_axis_name, get_type(unique_times), ("time",), chunksizes=(self.time_chunk,))
+        self.time.units          = "seconds since 1970-01-01T00:00:00Z"
+        self.time.standard_name  = "time"
+        self.time.long_name      = "time of measurement"
+        self.time.calendar       = "gregorian"
+        self.time[:] = unique_times
 
-            elif unique_verticals.size > 1:
-                # TIMESERIES PROFILE
-                nc.setncattr("featureType", "timeSeriesProfile")
+        logger.debug("Setting up {}...".format(self.vertical_axis_name))
+        # Figure out if we are creating a Profile or just a TimeSeries
+        nc.setncattr("geospatial_vertical_units", "meters")
+        nc.setncattr("geospatial_vertical_positive", self.vertical_positive)
+        if unique_verticals.size <= 1:
+            # TIMESERIES
+            nc.setncattr("featureType", "timeSeries")
+            # Fill in variable if we have an actual height. Else, the fillvalue remains.
+            nc.setncattr("geospatial_vertical_resolution", '0')
+            if unique_verticals.size == 1 and not np.isnan(unique_verticals[0]) and unique_verticals[0] != self.vertical_fill:
                 # Vertical extents
-                non_nan_verticals = unique_verticals[ (~np.isnan(unique_verticals)) & (unique_verticals != self.vertical_fill) ]
-                minvertical    = float(np.min(non_nan_verticals))
-                maxvertical    = float(np.max(non_nan_verticals))
-                vertical_diffs = non_nan_verticals[1:] - non_nan_verticals[:-1]
-                nc.setncattr("geospatial_vertical_min", minvertical)
-                nc.setncattr("geospatial_vertical_max", maxvertical)
-                if vertical_diffs.size >= 1:
-                    nc.setncattr("geospatial_vertical_resolution", " ".join([ str(x) for x in list(vertical_diffs) if not np.isnan(x) ]))
-                else:
-                    nc.setncattr("geospatial_vertical_resolution", '0')
-                # There is more than one vertical value for this variable, we need to create a vertical dimension
-                nc.createDimension("z", unique_verticals.size)
-                self.z = nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), ("z", ), fill_value=self.vertical_fill)
+                nc.setncattr("geospatial_vertical_min",      unique_verticals[0])
+                nc.setncattr("geospatial_vertical_max",      unique_verticals[0])
+            self.z = nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), fill_value=self.vertical_fill)
 
-            self.z.grid_mapping  = 'crs'
-            self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)
-            if self.vertical_positive == 'up':
-                self.z.standard_name = 'height'
-            elif self.vertical_positive == 'down':
-                self.z.standard_name = 'depth'
-            self.z.positive      = self.vertical_positive
-            self.z.units         = "m"
-            self.z.axis          = "Z"
-            self.z[:] = unique_verticals
+        elif unique_verticals.size > 1:
+            # TIMESERIES PROFILE
+            nc.setncattr("featureType", "timeSeriesProfile")
+            # Vertical extents
+            non_nan_verticals = unique_verticals[ (~np.isnan(unique_verticals)) & (unique_verticals != self.vertical_fill) ]
+            minvertical    = float(np.min(non_nan_verticals))
+            maxvertical    = float(np.max(non_nan_verticals))
+            vertical_diffs = non_nan_verticals[1:] - non_nan_verticals[:-1]
+            nc.setncattr("geospatial_vertical_min", minvertical)
+            nc.setncattr("geospatial_vertical_max", maxvertical)
+            if vertical_diffs.size >= 1:
+                nc.setncattr("geospatial_vertical_resolution", " ".join([ str(x) for x in list(vertical_diffs) if not np.isnan(x) ]))
+            else:
+                nc.setncattr("geospatial_vertical_resolution", '0')
+            # There is more than one vertical value for this variable, we need to create a vertical dimension
+            nc.createDimension("z", unique_verticals.size)
+            self.z = nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), ("z", ), fill_value=self.vertical_fill)
+
+        self.z.grid_mapping  = 'crs'
+        self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)
+        if self.vertical_positive == 'up':
+            self.z.standard_name = 'height'
+        elif self.vertical_positive == 'down':
+            self.z.standard_name = 'depth'
+        self.z.positive      = self.vertical_positive
+        self.z.units         = "m"
+        self.z.axis          = "Z"
+        self.z[:] = unique_verticals
 
     @property
     def ncd(self):
-        with EnhancedDataset(self.out_file, 'r') as nc:
-            return nc
+        return EnhancedDataset(self.out_file, 'r')
 
 
 def get_dataframe_from_variable(nc, data_var):

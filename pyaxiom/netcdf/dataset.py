@@ -53,18 +53,12 @@ class EnhancedDataset(Dataset):
         return vs
 
     def close(self):
-        try:
-            self.sync()
-        except RuntimeError:
-            pass
+        if not self.isopen():
+            return
+
+        self.sync()
+        super(EnhancedDataset, self).close()
 
 
-class EnhancedMFDataset(MFDataset, EnhancedDataset):
-    def __init__(self, *args, **kwargs):
-        super(EnhancedMFDataset, self).__init__(*args, **kwargs)
-
-    def close(self):
-        try:
-            self.sync()
-        except RuntimeError:
-            pass
+class EnhancedMFDataset(EnhancedDataset, MFDataset):
+    pass
