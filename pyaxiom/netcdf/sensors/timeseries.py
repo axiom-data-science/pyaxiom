@@ -11,6 +11,7 @@ import netCDF4
 import numpy as np
 import pandas as pd
 
+import warnings
 from pyaxiom import logger
 from pyaxiom.urn import IoosUrn
 from pyaxiom.utils import urnify
@@ -170,56 +171,58 @@ class TimeSeries(object):
                 vertical_fill = -9999.9
             self.vertical_fill = vertical_fill
 
+        self._nc = EnhancedDataset(self.out_file, 'a')
         self.setup_times_and_verticals(times, verticals)
         logger.info("Created file at '{}'".format(self.out_file))
 
     def add_instrument_metadata(self, urn):
-        with EnhancedDataset(self.out_file, 'a') as nc:
-            instrument = nc.createVariable("instrument", "i4")
-            instrument.definition = "http://mmisw.org/ont/ioos/definition/sensorID"
-            instrument.long_name = urn
-            instrument.ioos_code = urn
-            nc.instrument = 'instrument'
+        instrument = self._nc.createVariable("instrument", "i4")
+        instrument.definition = "http://mmisw.org/ont/ioos/definition/sensorID"
+        instrument.long_name = urn
+        instrument.ioos_code = urn
+        self._nc.instrument = 'instrument'
+        self._nc.sync()
 
     def add_instrument_variable(self, variable_name):
-        with EnhancedDataset(self.out_file, 'a') as nc:
-            if variable_name not in nc.variables:
-                logger.error("Variable {} not found in file, cannot create instrument metadata variable")
-                return
-            elif 'id' not in nc.ncattrs() or 'naming_authority' not in nc.ncattrs():
-                logger.error("Global attributes 'id' and 'naming_authority' are required to create an instrumnet variable")
-                return
+        if variable_name not in self._nc.variables:
+            logger.error("Variable {} not found in file, cannot create instrument metadata variable")
+            return
+        elif 'id' not in self._nc.ncattrs() or 'naming_authority' not in self._nc.ncattrs():
+            logger.error("Global attributes 'id' and 'naming_authority' are required to create an instrumnet variable")
+            return
 
-            instr_var_name = "{}_instrument".format(variable_name)
-            instrument = nc.createVariable(instr_var_name, "i4")
+        instr_var_name = "{}_instrument".format(variable_name)
+        instrument = self._nc.createVariable(instr_var_name, "i4")
 
-            datavar = nc.variables[variable_name]
-            vats = { k: getattr(datavar, k) for k in datavar.ncattrs() }
-            instrument_urn = urnify(nc.naming_authority, nc.id, vats)
+        datavar = self._nc.variables[variable_name]
+        vats = { k: getattr(datavar, k) for k in datavar.ncattrs() }
+        instrument_urn = urnify(self._nc.naming_authority, self._nc.id, vats)
 
-            instrument.long_name = instrument_urn
-            instrument.ioos_code = instrument_urn
-            instrument.short_name = IoosUrn.from_string(instrument_urn).component
-            instrument.definition = "http://mmisw.org/ont/ioos/definition/sensorID"
+        instrument.long_name = instrument_urn
+        instrument.ioos_code = instrument_urn
+        instrument.short_name = IoosUrn.from_string(instrument_urn).component
+        instrument.definition = "http://mmisw.org/ont/ioos/definition/sensorID"
 
-            datavar.instrument = instr_var_name
+        datavar.instrument = instr_var_name
+        self._nc.sync()
 
     def add_time_bounds(self, delta=None, position=None):
-        with EnhancedDataset(self.out_file, 'a') as nc:
-            nc.createDimension("bounds", 2)
-            time_bounds = nc.createVariable('{}_bounds'.format(self.time_axis_name), "f8", ("time", "bounds",), chunksizes=(self.time_chunk, 2,))
-            time_bounds.units    = "seconds since 1970-01-01T00:00:00Z"
-            time_bounds.calendar = "gregorian"
+        self._nc.createDimension("bounds", 2)
+        time_bounds = self._nc.createVariable('{}_bounds'.format(self.time_axis_name), "f8", ("time", "bounds",), chunksizes=(self.time_chunk, 2,))
+        time_bounds.units    = "seconds since 1970-01-01T00:00:00Z"
+        time_bounds.calendar = "gregorian"
 
-            time_objs = netCDF4.num2date(self.time[:], units=self.time.units, calendar=self.time.calendar)
-            bounds_kwargs = dict(units=time_bounds.units, calendar=time_bounds.calendar)
+        time_objs = netCDF4.num2date(self.time[:], units=self.time.units, calendar=self.time.calendar)
+        bounds_kwargs = dict(units=time_bounds.units, calendar=time_bounds.calendar)
 
-            if position == "start":
-                time_bounds[:] = np.asarray(list(zip(self.time[:], netCDF4.date2num(time_objs + delta, **bounds_kwargs))))
-            elif position == "middle":
-                time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta / 2, **bounds_kwargs), netCDF4.date2num(time_objs + delta / 2, **bounds_kwargs))))
-            elif position == "end":
-                time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta, **bounds_kwargs), self.time[:])))
+        if position == "start":
+            time_bounds[:] = np.asarray(list(zip(self.time[:], netCDF4.date2num(time_objs + delta, **bounds_kwargs))))
+        elif position == "middle":
+            time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta / 2, **bounds_kwargs), netCDF4.date2num(time_objs + delta / 2, **bounds_kwargs))))
+        elif position == "end":
+            time_bounds[:] = np.asarray(list(zip(netCDF4.date2num(time_objs - delta, **bounds_kwargs), self.time[:])))
+
+        self._nc.sync()
 
     def add_variable(self, variable_name, values, times=None, verticals=None, sensor_vertical_datum=None, attributes=None, unlink_from_profile=None, fillvalue=None, raise_on_error=False, create_instrument_variable=False):
 
@@ -256,16 +259,18 @@ class TimeSeries(object):
         fillvalue = values.dtype.type(fillvalue)
 
         used_values = None
+
+        vertical_axis = self._nc.variables.get(self.vertical_axis_name)
         try:
             if unlink_from_profile is True:
                 used_values = np.ma.reshape(values, (self.time.size, ))
                 used_values = used_values[self.time_indexes]
             # These next two cases should work for all but a few cases, which are caught below
-            elif self.z.size == 1:
+            elif vertical_axis.size == 1:
                 used_values = np.ma.reshape(values, (self.time.size, ))
                 used_values = used_values[self.time_indexes]
             else:
-                used_values = np.ma.reshape(values, (self.time.size, self.z.size, ))
+                used_values = np.ma.reshape(values, (self.time.size, vertical_axis.size, ))
                 used_values = used_values[self.time_indexes]
                 try:
                     used_values = used_values[:, self.vertical_indexes]
@@ -277,17 +282,17 @@ class TimeSeries(object):
             if raise_on_error is True:
                 raise
             else:
-                logger.warning("Could not do a simple reshape of data, trying to match manually! Time:{!s}, Heights:{!s}, Values:{!s}".format(self.time.size, self.z.size, values.size))
-            if self.z.size > 1:
+                logger.warning("Could not do a simple reshape of data, trying to match manually! Time:{!s}, Heights:{!s}, Values:{!s}".format(self.time.size, vertical_axis.size, values.size))
+            if vertical_axis.size > 1:
                 if times is not None and verticals is not None:
                     # Hmmm, we have two actual height values for this station.
                     # Not cool man, not cool.
                     # Reindex the entire values array.  This is slow.
-                    indexed = ((bisect.bisect_left(self.time[:], times[i]), bisect.bisect_left(self.z[:], verticals[i]), values[i]) for i in range(values.size))
-                    used_values = np.ndarray((self.time.size, self.z.size, ), dtype=get_type(values))
+                    indexed = ((bisect.bisect_left(self.time[:], times[i]), bisect.bisect_left(vertical_axis[:], verticals[i]), values[i]) for i in range(values.size))
+                    used_values = np.ndarray((self.time.size, vertical_axis.size, ), dtype=get_type(values))
                     used_values.fill(fillvalue)
                     for (tzi, zzi, vz) in indexed:
-                        if zzi < self.z.size and tzi < self.time.size:
+                        if zzi < vertical_axis.size and tzi < self.time.size:
                             used_values[tzi, zzi] = vz
                 else:
                     raise ValueError("You need to pass in both 'times' and 'verticals' parameters that matches the size of the 'values' parameter.")
@@ -303,64 +308,64 @@ class TimeSeries(object):
                 else:
                     raise ValueError("You need to pass in a 'times' parameter that matches the size of the 'values' parameter.")
 
-        with EnhancedDataset(self.out_file, 'a') as nc:
-            logger.info("Setting values for {}...".format(variable_name))
-            if len(used_values.shape) == 1:
-                var = nc.createVariable(variable_name, get_type(used_values), ("time",), fill_value=fillvalue, chunksizes=(self.time_chunk,), zlib=True)
-                if self.z.size == 1:
-                    var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
-                else:
-                    # This is probably a bottom sensor on an ADCP or something, don't add the height coordinate
-                    var.coordinates = "{} latitude longitude".format(self.time_axis_name)
-                    if unlink_from_profile is True:
-                        # Create metadata variable for the sensor_depth
-                        if nc.variables.get('sensor_depth') is None:
-                            logger.info("Setting the special case 'sensor_depth' metadata variable")
-                            inst_depth = nc.createVariable('sensor_depth', get_type(verticals))
-                            inst_depth.units = 'm'
-                            inst_depth.standard_name = 'surface_altitude'
-                            inst_depth.positive = self.vertical_positive
-                            if self.vertical_positive.lower() == 'down':
-                                inst_depth.long_name = 'sensor depth below datum'
-                            elif self.vertical_positive.lower() == 'up':
-                                inst_depth.long_name = 'sensor height above datum'
-                            inst_depth.datum = sensor_vertical_datum or 'Unknown'
-                            if verticals and verticals.size > 0:
-                                inst_depth[:] = verticals[0]
-                            else:
-                                inst_depth[:] = self.vertical_fill
-
-            elif len(used_values.shape) == 2:
-                var = nc.createVariable(variable_name, get_type(used_values), ("time", "z",), fill_value=fillvalue, chunksizes=(self.time_chunk, self.z.size,), zlib=True)
+        logger.info("Setting values for {}...".format(variable_name))
+        if len(used_values.shape) == 1:
+            var = self._nc.createVariable(variable_name, get_type(used_values), ("time",), fill_value=fillvalue, chunksizes=(self.time_chunk,), zlib=True)
+            if vertical_axis.size == 1:
                 var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
             else:
-                raise ValueError("Could not create variable.  Shape of data is {!s}.  Expected a dimension of 1 or 2, not {!s}.".format(used_values.shape, len(used_values.shape)))
-            # Set the variable attributes as passed in
-            if attributes:
-                for k, v in attributes.items():
+                # This is probably a bottom sensor on an ADCP or something, don't add the height coordinate
+                var.coordinates = "{} latitude longitude".format(self.time_axis_name)
+                if unlink_from_profile is True:
+                    # Create metadata variable for the sensor_depth
+                    if self._nc.variables.get('sensor_depth') is None:
+                        logger.info("Setting the special case 'sensor_depth' metadata variable")
+                        inst_depth = self._nc.createVariable('sensor_depth', get_type(verticals))
+                        inst_depth.units = 'm'
+                        inst_depth.standard_name = 'surface_altitude'
+                        inst_depth.positive = self.vertical_positive
+                        if self.vertical_positive.lower() == 'down':
+                            inst_depth.long_name = 'sensor depth below datum'
+                        elif self.vertical_positive.lower() == 'up':
+                            inst_depth.long_name = 'sensor height above datum'
+                        inst_depth.datum = sensor_vertical_datum or 'Unknown'
+                        if verticals and verticals.size > 0:
+                            inst_depth[:] = verticals[0]
+                        else:
+                            inst_depth[:] = self.vertical_fill
 
-                    if k == 'vertical_datum' and sensor_vertical_datum is None and v is not None:
-                        # Use this as the vertical datum if it is specified and we didn't already have one
-                        try:
-                            self.crs.geoid_name = v
-                            self.crs.vertical_datum = v
-                            self.crs.water_surface_reference_datum = v
-                        except AttributeError:
-                            pass
+        elif len(used_values.shape) == 2:
+            var = self._nc.createVariable(variable_name, get_type(used_values), ("time", "z",), fill_value=fillvalue, chunksizes=(self.time_chunk, vertical_axis.size,), zlib=True)
+            var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
+        else:
+            raise ValueError("Could not create variable.  Shape of data is {!s}.  Expected a dimension of 1 or 2, not {!s}.".format(used_values.shape, len(used_values.shape)))
+        # Set the variable attributes as passed in
+        if attributes:
+            for k, v in attributes.items():
 
-                    if k not in ['name', 'coordinates', '_FillValue'] and v is not None:
-                        try:
-                            var.setncattr(k, v)
-                        except BaseException:
-                            logger.info('Could not add attribute {}: {}, skipping.'.format(k, v))
+                if k == 'vertical_datum' and sensor_vertical_datum is None and v is not None:
+                    # Use this as the vertical datum if it is specified and we didn't already have one
+                    try:
+                        self.crs.geoid_name = v
+                        self.crs.vertical_datum = v
+                        self.crs.water_surface_reference_datum = v
+                    except AttributeError:
+                        pass
 
-            var.grid_mapping = 'crs'
-            var.platform = 'platform'
-            var[:] = used_values
+                if k not in ['name', 'coordinates', '_FillValue'] and v is not None:
+                    try:
+                        var.setncattr(k, v)
+                    except BaseException:
+                        logger.info('Could not add attribute {}: {}, skipping.'.format(k, v))
+
+        var.grid_mapping = 'crs'
+        var.platform = 'platform'
+        var[:] = used_values
 
         if create_instrument_variable is True:
             self.add_instrument_variable(variable_name)
 
+        self._nc.sync()
         return var
 
     def add_variable_object(self, varobject, dimension_map=None, reduce_dims=None):
@@ -368,34 +373,34 @@ class TimeSeries(object):
         dimension_map = dimension_map or {}
         reduce_dims = reduce_dims or False
 
-        with EnhancedDataset(self.out_file, 'a') as nc:
+        fillvalue = -9999.99
+        if hasattr(varobject, '_FillValue'):
+            fillvalue = varobject._FillValue
+        fillvalue = varobject.dtype.type(fillvalue)
 
-            fillvalue = -9999.99
-            if hasattr(varobject, '_FillValue'):
-                fillvalue = varobject._FillValue
-            fillvalue = varobject.dtype.type(fillvalue)
+        dims = []
+        for n in varobject.dimensions:
+            d = dimension_map.get(n, n)
+            dim_size = varobject.shape[list(varobject.dimensions).index(n)]
+            if reduce_dims is True and dim_size in [0, 1]:
+                continue
 
-            dims = []
-            for n in varobject.dimensions:
-                d = dimension_map.get(n, n)
-                dim_size = varobject.shape[list(varobject.dimensions).index(n)]
-                if reduce_dims is True and dim_size in [0, 1]:
-                    continue
+            if d not in self._nc.dimensions:
+                self._nc.createDimension(d, dim_size)
+            dims.append(d)
 
-                if d not in nc.dimensions:
-                    nc.createDimension(d, dim_size)
-                dims.append(d)
+        var = self._nc.createVariable(varobject.name, get_type(varobject), dims, fill_value=fillvalue, zlib=True)
 
-            var = nc.createVariable(varobject.name, get_type(varobject), dims, fill_value=fillvalue, zlib=True)
+        for k in varobject.ncattrs():
+            if k not in ['name', '_FillValue']:
+                var.setncattr(k, varobject.getncattr(k))
 
-            for k in varobject.ncattrs():
-                if k not in ['name', '_FillValue']:
-                    var.setncattr(k, varobject.getncattr(k))
+        if reduce_dims:
+            var[:] = varobject[:].squeeze()
+        else:
+            var[:] = varobject[:]
 
-            if reduce_dims:
-                var[:] = varobject[:].squeeze()
-            else:
-                var[:] = varobject[:]
+        self._nc.sync()
 
     def setup_times_and_verticals(self, times, verticals):
 
@@ -443,79 +448,83 @@ class TimeSeries(object):
         starting = datetime.utcfromtimestamp(unique_times[0])
         ending   = datetime.utcfromtimestamp(unique_times[-1])
 
-        with EnhancedDataset(self.out_file, 'a') as nc:
-            logger.debug("Setting up time...")
-            # Time extents
-            nc.setncattr("time_coverage_start",    starting.isoformat())
-            nc.setncattr("time_coverage_end",      ending.isoformat())
-            # duration (ISO8601 format)
-            nc.setncattr("time_coverage_duration", "P%sS" % str(int(round((ending - starting).total_seconds()))))
-            # resolution (ISO8601 format)
-            # subtract adjacent times to produce an array of differences, then get the most common occurance
-            diffs = unique_times[1:] - unique_times[:-1]
-            uniqs, inverse = np.unique(diffs, return_inverse=True)
-            if uniqs.size > 1:
-                time_diffs = diffs[np.bincount(inverse).argmax()]
-                nc.setncattr("time_coverage_resolution", "P%sS" % str(int(round(time_diffs))))
+        logger.debug("Setting up time...")
+        # Time extents
+        self._nc.setncattr("time_coverage_start",    starting.isoformat())
+        self._nc.setncattr("time_coverage_end",      ending.isoformat())
+        # duration (ISO8601 format)
+        self._nc.setncattr("time_coverage_duration", "P%sS" % str(int(round((ending - starting).total_seconds()))))
+        # resolution (ISO8601 format)
+        # subtract adjacent times to produce an array of differences, then get the most common occurance
+        diffs = unique_times[1:] - unique_times[:-1]
+        uniqs, inverse = np.unique(diffs, return_inverse=True)
+        if uniqs.size > 1:
+            time_diffs = diffs[np.bincount(inverse).argmax()]
+            self._nc.setncattr("time_coverage_resolution", "P%sS" % str(int(round(time_diffs))))
 
-            # Time
-            self.time_chunk = min(unique_times.size, 1000)
-            nc.createDimension("time", unique_times.size)
-            self.time = nc.createVariable(self.time_axis_name, get_type(unique_times), ("time",), chunksizes=(self.time_chunk,))
-            self.time.units          = "seconds since 1970-01-01T00:00:00Z"
-            self.time.standard_name  = "time"
-            self.time.long_name      = "time of measurement"
-            self.time.calendar       = "gregorian"
-            self.time[:] = unique_times
+        # Time
+        self.time_chunk = min(unique_times.size, 1000)
+        self._nc.createDimension("time", unique_times.size)
+        self.time = self._nc.createVariable(self.time_axis_name, get_type(unique_times), ("time",), chunksizes=(self.time_chunk,))
+        self.time.units          = "seconds since 1970-01-01T00:00:00Z"
+        self.time.standard_name  = "time"
+        self.time.long_name      = "time of measurement"
+        self.time.calendar       = "gregorian"
+        self.time[:] = unique_times
 
-            logger.debug("Setting up {}...".format(self.vertical_axis_name))
-            # Figure out if we are creating a Profile or just a TimeSeries
-            nc.setncattr("geospatial_vertical_units", "meters")
-            nc.setncattr("geospatial_vertical_positive", self.vertical_positive)
-            if unique_verticals.size <= 1:
-                # TIMESERIES
-                nc.setncattr("featureType", "timeSeries")
-                # Fill in variable if we have an actual height. Else, the fillvalue remains.
-                nc.setncattr("geospatial_vertical_resolution", '0')
-                if unique_verticals.size == 1 and not np.isnan(unique_verticals[0]) and unique_verticals[0] != self.vertical_fill:
-                    # Vertical extents
-                    nc.setncattr("geospatial_vertical_min",      unique_verticals[0])
-                    nc.setncattr("geospatial_vertical_max",      unique_verticals[0])
-                self.z = nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), fill_value=self.vertical_fill)
-
-            elif unique_verticals.size > 1:
-                # TIMESERIES PROFILE
-                nc.setncattr("featureType", "timeSeriesProfile")
+        logger.debug("Setting up {}...".format(self.vertical_axis_name))
+        # Figure out if we are creating a Profile or just a TimeSeries
+        self._nc.setncattr("geospatial_vertical_units", "meters")
+        self._nc.setncattr("geospatial_vertical_positive", self.vertical_positive)
+        if unique_verticals.size <= 1:
+            # TIMESERIES
+            self._nc.setncattr("featureType", "timeSeries")
+            # Fill in variable if we have an actual height. Else, the fillvalue remains.
+            self._nc.setncattr("geospatial_vertical_resolution", '0')
+            if unique_verticals.size == 1 and not np.isnan(unique_verticals[0]) and unique_verticals[0] != self.vertical_fill:
                 # Vertical extents
-                non_nan_verticals = unique_verticals[ (~np.isnan(unique_verticals)) & (unique_verticals != self.vertical_fill) ]
-                minvertical    = float(np.min(non_nan_verticals))
-                maxvertical    = float(np.max(non_nan_verticals))
-                vertical_diffs = non_nan_verticals[1:] - non_nan_verticals[:-1]
-                nc.setncattr("geospatial_vertical_min", minvertical)
-                nc.setncattr("geospatial_vertical_max", maxvertical)
-                if vertical_diffs.size >= 1:
-                    nc.setncattr("geospatial_vertical_resolution", " ".join([ str(x) for x in list(vertical_diffs) if not np.isnan(x) ]))
-                else:
-                    nc.setncattr("geospatial_vertical_resolution", '0')
-                # There is more than one vertical value for this variable, we need to create a vertical dimension
-                nc.createDimension("z", unique_verticals.size)
-                self.z = nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), ("z", ), fill_value=self.vertical_fill)
+                self._nc.setncattr("geospatial_vertical_min",      unique_verticals[0])
+                self._nc.setncattr("geospatial_vertical_max",      unique_verticals[0])
+            self.z = self._nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), fill_value=self.vertical_fill)
 
-            self.z.grid_mapping  = 'crs'
-            self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)
-            if self.vertical_positive == 'up':
-                self.z.standard_name = 'height'
-            elif self.vertical_positive == 'down':
-                self.z.standard_name = 'depth'
-            self.z.positive      = self.vertical_positive
-            self.z.units         = "m"
-            self.z.axis          = "Z"
-            self.z[:] = unique_verticals
+        elif unique_verticals.size > 1:
+            # TIMESERIES PROFILE
+            self._nc.setncattr("featureType", "timeSeriesProfile")
+            # Vertical extents
+            non_nan_verticals = unique_verticals[ (~np.isnan(unique_verticals)) & (unique_verticals != self.vertical_fill) ]
+            minvertical    = float(np.min(non_nan_verticals))
+            maxvertical    = float(np.max(non_nan_verticals))
+            vertical_diffs = non_nan_verticals[1:] - non_nan_verticals[:-1]
+            self._nc.setncattr("geospatial_vertical_min", minvertical)
+            self._nc.setncattr("geospatial_vertical_max", maxvertical)
+            if vertical_diffs.size >= 1:
+                self._nc.setncattr("geospatial_vertical_resolution", " ".join([ str(x) for x in list(vertical_diffs) if not np.isnan(x) ]))
+            else:
+                self._nc.setncattr("geospatial_vertical_resolution", '0')
+            # There is more than one vertical value for this variable, we need to create a vertical dimension
+            self._nc.createDimension("z", unique_verticals.size)
+            self.z = self._nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), ("z", ), fill_value=self.vertical_fill)
+
+        self.z.grid_mapping  = 'crs'
+        self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)
+        if self.vertical_positive == 'up':
+            self.z.standard_name = 'height'
+        elif self.vertical_positive == 'down':
+            self.z.standard_name = 'depth'
+        self.z.positive      = self.vertical_positive
+        self.z.units         = "m"
+        self.z.axis          = "Z"
+        self.z[:] = unique_verticals
+
+        self._nc.sync()
 
     @property
     def ncd(self):
-        with EnhancedDataset(self.out_file, 'r') as nc:
-            return nc
+        return self._nc
+
+    def __del__(self):
+        if self._nc:
+            self._nc.close()
 
 
 def get_dataframe_from_variable(nc, data_var):

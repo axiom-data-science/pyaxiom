@@ -195,7 +195,6 @@ class TestUrnUtils(unittest.TestCase):
         attrs = dict(standard_name='lwe_thickness_of_precipitation_amount',
                      vertical_datum='NAVD88')
         ts.add_variable('temperature', values=values, attributes=attrs)
-        ts.ncd.sync()
         urn = urnify('axiom', 'foo', ts.ncd.variables['temperature'])
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#vertical_datum=navd88'
 
@@ -203,7 +202,6 @@ class TestUrnUtils(unittest.TestCase):
         attrs = dict(standard_name='lwe_thickness_of_precipitation_amount',
                      cell_methods='time: variance (interval: PT1H comment: sampled instantaneously)')
         ts.add_variable('temperature2', values=values, attributes=attrs)
-        ts.ncd.sync()
         urn = urnify('axiom', 'foo', ts.ncd.variables['temperature2'])
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:variance;interval=pt1h'
 
@@ -211,7 +209,6 @@ class TestUrnUtils(unittest.TestCase):
         attrs = dict(standard_name='lwe_thickness_of_precipitation_amount',
                      cell_methods='time: variance time: mean (interval: PT1H comment: sampled instantaneously)')
         ts.add_variable('temperature3', values=values, attributes=attrs)
-        ts.ncd.sync()
         urn = urnify('axiom', 'foo', ts.ncd.variables['temperature3'])
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
 
@@ -220,7 +217,6 @@ class TestUrnUtils(unittest.TestCase):
                      cell_methods='time: variance time: mean (interval: PT1H comment: sampled instantaneously)',
                      discriminant='2')
         ts.add_variable('temperature4', values=values, attributes=attrs)
-        ts.ncd.sync()
         urn = urnify('axiom', 'foo', ts.ncd.variables['temperature4'])
         assert urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean,time:variance;interval=pt1h'
 

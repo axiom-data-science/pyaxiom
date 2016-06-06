@@ -131,6 +131,7 @@ class Collection(object):
         try:
             nco = Nco()
         except BaseException:
+            # This is not necessarily an import error (could be wrong PATH)
             raise ImportError("NCO not found.  The NCO python bindings are required to use 'Collection.combine'.")
 
         if len(members) > 0 and hasattr(members[0], 'path'):

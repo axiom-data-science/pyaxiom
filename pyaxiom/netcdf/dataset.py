@@ -4,9 +4,6 @@ from netCDF4 import Dataset, MFDataset
 
 
 class EnhancedDataset(Dataset):
-    def __init__(self, *args, **kwargs):
-        super(EnhancedDataset, self).__init__(*args, **kwargs)
-
     def get_variables_by_attributes(self, **kwargs):
         """ Returns variables that match specific conditions.
 
@@ -53,20 +50,12 @@ class EnhancedDataset(Dataset):
         return vs
 
     def close(self):
-        try:
-            self.sync()
-            self.close()
-        except RuntimeError:
-            pass
+        if not self.isopen():
+            return
+
+        self.sync()
+        super(EnhancedDataset, self).close()
 
 
-class EnhancedMFDataset(MFDataset, EnhancedDataset):
-    def __init__(self, *args, **kwargs):
-        super(EnhancedMFDataset, self).__init__(*args, **kwargs)
-
-    def close(self):
-        try:
-            self.sync()
-            self.close()
-        except RuntimeError:
-            pass
+class EnhancedMFDataset(EnhancedDataset, MFDataset):
+    pass
