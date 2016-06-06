@@ -5,10 +5,6 @@ python:
   - "3.5"
 
 sudo: false
-addons:
-  apt:
-    packages:
-      - nco
 
 before_install:
   # Install miniconda
@@ -35,7 +31,9 @@ before_install:
 install:
   # Customise the testing environment
   # ---------------------------------
+  - conda install --channel ioos pytest
   - conda install --channel ioos --file requirements.txt
-  - conda install --channel ioos nco pyncml pytest pynco
+  - conda install --channel ioos pyncml pynco
   - conda list --export
+
 script: py.test -v
