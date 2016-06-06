@@ -19,7 +19,7 @@ class Profile(object):
     def __init__(self, df=None, global_attributes=None, variable_attributes=None, fill_value=None, vertical_positive=None, base_time=None):
 
         self.df = df if isinstance(df, pd.DataFrame) and not df.empty else pd.DataFrame()
-        self.fill_value = fill_value or np.dtype('f8').type(-9999.9)
+        self.fill_value = fill_value or -9999.9
         self.global_attributes = global_attributes or {}
         self.variable_attributes = variable_attributes or {}
         self.vertical_positive = vertical_positive or 'down'
@@ -179,7 +179,7 @@ class IncompleteProfile(Profile):
             for i, (name, p) in enumerate(profile_group):
                 for c in [d for d in self.df.columns if d not in reserved_columns]:
                     var_name = c.split(' ')[0].lower()
-                    fill = self.fill_value.astype(p[c].dtype)
+                    fill = p[c].dtype.type(self.fill_value)
                     if var_name not in nc.variables:
                         v = nc.createVariable(var_name, self.df[c].dtype, ('profile', 'z'), fill_value=fill)
                     else:
