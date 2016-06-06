@@ -115,9 +115,12 @@ class TimeSeries(object):
             nc.setncattr("date_issued", now_date)
             nc.setncattr('cdm_data_type', 'Station')
 
-            history_list = getattr(nc, 'history', '').split('\n')
-            history_list.append('{} - {} - {}'.format(now_date, 'pyaxiom', 'File created using pyaxiom'))
-            nc.setncattr('history', '\n'.join([ x for x in history_list if x ]))
+            old_history = getattr(nc, 'history', '')
+            new_history = '{} - {} - {}'.format(now_date, 'pyaxiom', 'File created using pyaxiom')
+            if old_history:
+                nc.setncattr('history', '{}\n{}'.format(old_history, new_history))
+            else:
+                nc.setncattr('history', new_history)
 
             # Station name
             nc.createDimension("feature_type_instance", len(station_name))
