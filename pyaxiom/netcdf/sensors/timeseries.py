@@ -321,7 +321,7 @@ class TimeSeries(object):
                 var.coordinates = "{} latitude longitude".format(self.time_axis_name)
                 if unlink_from_profile is True:
                     # Create metadata variable for the sensor_depth
-                    if self._nc.variables.get('sensor_depth') is None:
+                    if verticals is not None and self._nc.variables.get('sensor_depth') is None:
                         logger.info("Setting the special case 'sensor_depth' metadata variable")
                         inst_depth = self._nc.createVariable('sensor_depth', get_type(verticals))
                         inst_depth.units = 'm'
