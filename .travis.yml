@@ -24,6 +24,14 @@ before_install:
   - conda config --set show_channel_urls True
   - conda config --add create_default_packages pip
   - conda update --quiet conda
+
+  # Add 3rd party channels
+  # ------------------------------------
+  - conda config --add channels conda-forge
+  - conda config --add channels ioos
+
+  # Create our environment
+  # ------------------------------------
   - ENV_NAME='test-environment'
   - conda create --quiet -n $ENV_NAME python=$TRAVIS_PYTHON_VERSION
   - source activate $ENV_NAME
@@ -31,9 +39,9 @@ before_install:
 install:
   # Customise the testing environment
   # ---------------------------------
-  - conda install --channel ioos pytest
-  - conda install --channel ioos --file requirements.txt
-  - conda install --channel ioos pyncml pynco
+  - conda install pytest
+  - conda install --file requirements.txt
+  - conda install pyncml pynco
   - conda list --export
 
 script: py.test -v
