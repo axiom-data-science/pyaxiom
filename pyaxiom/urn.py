@@ -65,26 +65,26 @@ class IoosUrn(object):
         try:
             assert self.authority is not None
         except AssertionError:
-            logger.error('An "authority" is required')
+            logger.debug('URN not valid - An "authority" is required')
             return False
 
         try:
             assert self.label is not None
         except AssertionError:
-            logger.error('A "label" is required')
+            logger.debug('URN not valid - A "label" is required')
             return False
 
         try:
             assert self.asset_type in ASSET_TYPES
         except AssertionError:
-            logger.error('asset_type {0} is unknown.  Must be one of: {1}'.format(self.asset_type, ', '.join(ASSET_TYPES)))
+            logger.debug('URN not valid - asset_type {0} is unknown.  Must be one of: {1}'.format(self.asset_type, ', '.join(ASSET_TYPES)))
             return False
 
         if self.asset_type == 'station':
             try:
                 assert self.component is None
             except AssertionError:
-                logger.error('An asset_type of "station" may not have a "component".')
+                logger.debug('URN not valid - An asset_type of "station" may not have a "component".')
                 return False
 
         return True
