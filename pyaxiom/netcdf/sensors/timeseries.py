@@ -232,7 +232,7 @@ class TimeSeries(object):
         if isinstance(values, (list, tuple,)) and values:
             values = np.asarray(values)
         if get_type(values) == np.int64:
-            # Create time as int32 because DAP does not support int64 until DAP4.
+            # Create values as int32 because DAP does not support int64 until DAP4.
             values = values.astype(np.int32)
 
         if isinstance(times, (list, tuple,)) and times:
@@ -244,7 +244,7 @@ class TimeSeries(object):
         if isinstance(verticals, (list, tuple,)) and verticals:
             verticals = np.asarray(verticals)
         if get_type(verticals) == np.int64:
-            # Create time as int32 because DAP does not support int64 until DAP4.
+            # Create verticals as int32 because DAP does not support int64 until DAP4.
             verticals = verticals.astype(np.int32)
 
         # Set vertical datum on the CRS variable
