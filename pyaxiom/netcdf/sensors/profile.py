@@ -78,12 +78,12 @@ class Profile(object):
     def global_attributes(self):
         gas = self._global_attributes
         gas.update({
-           'geospatial_vertical_positive': self.vertical_positive,
-           'date_created': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z"),
-           'Conventions': 'CF-1.6',
-           'Metadata_conventions': 'Unidata Dataset Discovery v1.0',
-           'featureType': 'profile',
-           'cdm_data_type': 'Profile'
+            'geospatial_vertical_positive': self.vertical_positive,
+            'date_created': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z"),
+            'Conventions': 'CF-1.6',
+            'Metadata_conventions': 'Unidata Dataset Discovery v1.0',
+            'featureType': 'profile',
+            'cdm_data_type': 'Profile'
         })
 
         if not self.df.empty:
