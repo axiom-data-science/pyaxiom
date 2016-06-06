@@ -520,7 +520,6 @@ class TimeSeries(object):
 
     @property
     def ncd(self):
-        warnings.warn('This property is deprecated in favor of `dataset`', DeprecationWarning)
         return self._nc
 
     def __del__(self):
