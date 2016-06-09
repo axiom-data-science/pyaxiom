@@ -11,7 +11,6 @@ import netCDF4
 import numpy as np
 import pandas as pd
 
-import warnings
 from pyaxiom import logger
 from pyaxiom.urn import IoosUrn
 from pyaxiom.utils import urnify
@@ -409,9 +408,15 @@ class TimeSeries(object):
 
         if isinstance(times, (list, tuple,)):
             times = np.asarray(times)
+
+        # Create time as int32 or float64 because DAP does not support int64 until DAP4.
         if get_type(times) == np.int64:
-            # Create time as int32 because DAP does not support int64 until DAP4.
-            times = times.astype(np.int32)
+            if times[-1] < 2147483647:
+                # We can fit inside of an int32
+                times = times.astype(np.int32)
+            else:
+                # Create time as float32 because of int32 overflow
+                times = times.astype(np.float64)
 
         # If nothing is passed in, set to the vertical_fill value.
         if not isinstance(verticals, np.ndarray) and not verticals:
