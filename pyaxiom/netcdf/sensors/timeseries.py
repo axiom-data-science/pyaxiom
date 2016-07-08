@@ -558,7 +558,7 @@ def get_dataframe_from_variable(nc, data_var):
         except AttributeError:
             continue
 
-    times  = netCDF4.num2date(time_var[:], units=time_var.units)
+    times  = netCDF4.num2date(time_var[:], units=time_var.units, calendar=getattr(time_var, 'calendar', 'standard'))
     original_times_size = times.size
 
     if depth_var is None and hasattr(data_var, 'sensor_depth'):
