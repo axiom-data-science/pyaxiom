@@ -11,7 +11,7 @@ from pyaxiom.netcdf.sensors import TimeSeries
 import logging
 from pyaxiom import logger
 logger.level = logging.INFO
-logger.addHandler(logging.StreamHandler())
+logger.handlers = [logging.StreamHandler()]
 
 
 class IoosUrnTests(unittest.TestCase):
