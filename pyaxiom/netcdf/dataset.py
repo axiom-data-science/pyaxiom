@@ -49,6 +49,9 @@ class EnhancedDataset(Dataset):
 
         return vs
 
+    def __del__(self):
+        self.close()
+
     def close(self):
         if not self.isopen():
             return
