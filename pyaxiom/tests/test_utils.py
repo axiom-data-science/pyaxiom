@@ -6,7 +6,7 @@ from pyaxiom.netcdf.dataset import EnhancedDataset
 import logging
 from pyaxiom import logger
 logger.level = logging.INFO
-logger.addHandler(logging.StreamHandler())
+logger.handlers = [logging.StreamHandler()]
 
 
 class TestUtils(unittest.TestCase):

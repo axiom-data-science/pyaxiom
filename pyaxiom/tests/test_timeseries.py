@@ -13,8 +13,7 @@ import logging
 from pyaxiom import logger
 from pyaxiom.utils import urnify
 logger.level = logging.INFO
-logger.addHandler(logging.StreamHandler())
-
+logger.handlers = [logging.StreamHandler()]
 
 class TestTimeSeries(unittest.TestCase):
 
