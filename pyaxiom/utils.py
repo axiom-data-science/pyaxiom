@@ -3,6 +3,7 @@
 
 import random
 import string
+import operator
 import itertools
 
 from pyaxiom.urn import IoosUrn
@@ -17,6 +18,13 @@ class DotDict(object):
     def __repr__(self):
         import pprint
         return pprint.pformat(vars(self), indent=2)
+
+
+def unique_justseen(iterable, key=None):
+    "List unique elements, preserving order. Remember only the element just seen."
+    # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
+    # unique_justseen('ABBCcAD', str.lower) --> A B C A D
+    return map(next, map(operator.itemgetter(1), itertools.groupby(iterable, key)))
 
 
 def dictify_urn(urn, combine_interval=True):
