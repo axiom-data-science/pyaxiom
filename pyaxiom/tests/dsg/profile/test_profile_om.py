@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 
 import unittest
@@ -47,7 +48,7 @@ class TestOrthogonalMultidimensionalProfile(unittest.TestCase):
         assert np.isclose(m.profiles[2].y, 58.5395)
 
         assert m.profiles[37].min_z == 0.
-        assert m.profiles[37].max_z == 292.01
+        assert m.profiles[37].max_z == 292.01001
         assert m.profiles[37].t == dtparse('2005-09-14 17:27:00')
         assert np.isclose(m.profiles[37].x, -149.468)
         assert np.isclose(m.profiles[37].y, 60.01)

@@ -20,6 +20,14 @@ class DotDict(object):
         return pprint.pformat(vars(self), indent=2)
 
 
+def all_subclasses(cls):
+    """ Recursively generate of all the subclasses of class cls. """
+    for subclass in cls.__subclasses__():
+        yield subclass
+        for subclass in all_subclasses(subclass):
+            yield subclass
+
+
 def unique_justseen(iterable, key=None):
     "List unique elements, preserving order. Remember only the element just seen."
     # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
