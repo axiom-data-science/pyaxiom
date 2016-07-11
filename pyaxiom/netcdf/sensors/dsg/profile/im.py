@@ -2,10 +2,9 @@
 from datetime import datetime
 from collections import namedtuple
 
-import netCDF4 as nc4
 import numpy as np
 import pandas as pd
-
+import netCDF4 as nc4
 from pygc import great_distance
 from shapely.geometry import Point, LineString
 
@@ -14,16 +13,18 @@ from pyaxiom.netcdf import CFDataset
 from pyaxiom import logger
 
 
-class OrthogonalMultidimensionalProfile(CFDataset):
+class IncompleteMultidimensionalProfile(CFDataset):
     """
-    If the profile instances have the same number of elements and the vertical
-    coordinate values are identical for all instances, you may use the
-    orthogonal multidimensional array representation. This has either a
-    one-dimensional coordinate variable, z(z), provided the vertical coordinate
-    values are ordered monotonically, or a one-dimensional auxiliary coordinate
-    variable, alt(o), where o is the element dimension. In the former case,
-    listing the vertical coordinate variable in the coordinates attributes of
-    the data variables is optional.
+    If there are the same number of levels in each profile, but they do not
+    have the same set of vertical coordinates, one can use the incomplete
+    multidimensional array representation, which the vertical coordinate
+    variable is two-dimensional e.g. replacing z(z) in Example H.8,
+    "Atmospheric sounding profiles for a common set of vertical coordinates
+    stored in the orthogonal multidimensional array representation." with
+    alt(profile,z).  This representation also allows one to have a variable
+    number of elements in different profiles, at the cost of some wasted space.
+    In that case, any unused elements of the data and auxiliary coordinate
+    variables must contain missing data values (section 9.6).
     """
 
     @classmethod
@@ -39,42 +40,29 @@ class OrthogonalMultidimensionalProfile(CFDataset):
 
             # Allow for string variables
             pvar = pvars[0]
-            minimum_dimensions = 0
-            maximum_dimensions = 1
+            # This diferentiates between this and an OrthogonalMultidimensionalProfile
+            # Incomplete files need to have a profile dimension (at least 1 dim).
+            minimum_dimensions = 1
+            maximum_dimensions = 2
             if np.issubdtype(pvar.dtype, 'S'):
                 minimum_dimensions += 1
                 maximum_dimensions += 1
             assert minimum_dimensions <= len(pvar.dimensions) <= maximum_dimensions
 
-            is_single_profile = False
-            if len(pvar.dimensions) == minimum_dimensions:
-                is_single_profile = True
-
             t = dsg.t_axes()[0]
             x = dsg.x_axes()[0]
             y = dsg.y_axes()[0]
             z = dsg.z_axes()[0]
-            assert len(z.dimensions) == 1
-            z_dim = dsg.dimensions[z.dimensions[0]]
-
-            if is_single_profile:
-                assert t.size == 1
-                assert x.size == 1
-                assert y.size == 1
-                for dv in dsg.datavars():
-                    assert len(dv.dimensions) == 1
-                    assert z_dim.name in dv.dimensions
-                    assert dv.size == z_dim.size
-            else:
-                assert t.size == pvar.size
-                assert x.size == pvar.size
-                assert y.size == pvar.size
-                p_dim = dsg.dimensions[pvar.dimensions[0]]
-                for dv in dsg.datavars():
-                    assert len(dv.dimensions) == 2
-                    assert z_dim.name in dv.dimensions
-                    assert p_dim.name in dv.dimensions
-                    assert dv.size == z_dim.size * p_dim.size
+            assert t.size == pvar.size
+            assert x.size == pvar.size
+            assert y.size == pvar.size
+            p_dim = dsg.dimensions[pvar.dimensions[0]]
+            z_dim = dsg.dimensions[[ d for d in z.dimensions if d != p_dim.name ][0]]
+            for dv in dsg.datavars() + [z]:
+                assert len(dv.dimensions) == 2
+                assert z_dim.name in dv.dimensions
+                assert p_dim.name in dv.dimensions
+                assert dv.size == z_dim.size * p_dim.size
 
         except BaseException:
             return False
@@ -111,9 +99,9 @@ class OrthogonalMultidimensionalProfile(CFDataset):
             first_loc = Point(first_row.x, first_row.y)
             coords = list(unique_justseen(zip(df.x, df.y)))
             if len(coords) > 1:
-                geometry = LineString(coords)
+                geometry = LineString(coords)  # noqa
             elif len(coords) == 1:
-                geometry = first_loc
+                geometry = first_loc  # noqa
 
         meta = namedtuple('Metadata', ['min_t', 'max_t', 'profiles', 'first_loc', 'geometry'])
         return meta(
@@ -126,24 +114,15 @@ class OrthogonalMultidimensionalProfile(CFDataset):
 
     def to_dataframe(self, clean_cols=True, clean_rows=True):
         pvar = self.get_variables_by_attributes(cf_role='profile_id')[0]
-
-        minimum_dimensions = 0
-        if np.issubdtype(pvar.dtype, 'S'):
-            minimum_dimensions += 1
-        if len(pvar.dimensions) == minimum_dimensions:
-            # Single profile
-            ps = 1
-        else:
-            try:
-                # Multiple profiles in the file
-                ps = len(self.dimensions[pvar.dimensions[0]])
-            except IndexError:
-                # Single profile in the file
-                ps = 1
+        # Multiple profiles in the file
+        p_dim = self.dimensions[pvar.dimensions[0]]
+        ps = p_dim.size
         logger.debug(['# profiles: ', ps])
 
         zvar = self.z_axes()[0]
-        zs = len(self.dimensions[zvar.dimensions[0]])
+
+        z_dim = self.dimensions[[ d for d in zvar.dimensions if d != p_dim.name ][0]]
+        zs = z_dim.size
 
         # Profiles
         try:
@@ -154,11 +133,8 @@ class OrthogonalMultidimensionalProfile(CFDataset):
         logger.debug(['profile data size: ', p.size])
 
         # Z
-        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:].astype(np.float64))).round(5)
-        try:
-            z = np.tile(z, ps)
-        except ValueError:
-            z = z.flatten()
+        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:].astype(np.float64)))
+        z = z.flatten().round(5)
         logger.debug(['z data size: ', z.size])
 
         # T
