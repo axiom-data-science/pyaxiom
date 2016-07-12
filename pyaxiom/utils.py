@@ -3,8 +3,8 @@
 
 import random
 import string
-import operator
-import itertools
+from operator import itemgetter
+from itertools import groupby
 
 from pyaxiom.urn import IoosUrn
 from pyaxiom import logger
@@ -32,7 +32,13 @@ def unique_justseen(iterable, key=None):
     "List unique elements, preserving order. Remember only the element just seen."
     # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
     # unique_justseen('ABBCcAD', str.lower) --> A B C A D
-    return map(next, map(operator.itemgetter(1), itertools.groupby(iterable, key)))
+    try:
+        # PY2 support
+        import itertools.imap as map
+    except ImportError:
+        pass
+
+    return map(next, map(itemgetter(1), groupby(iterable, key)))
 
 
 def dictify_urn(urn, combine_interval=True):
