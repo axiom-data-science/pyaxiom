@@ -61,7 +61,7 @@ class OrthogonalMultidimensionalProfile(CFDataset):
                 assert t.size == 1
                 assert x.size == 1
                 assert y.size == 1
-                for dv in dsg.datavars():
+                for dv in dsg.data_vars():
                     assert len(dv.dimensions) == 1
                     assert z_dim.name in dv.dimensions
                     assert dv.size == z_dim.size
@@ -70,7 +70,7 @@ class OrthogonalMultidimensionalProfile(CFDataset):
                 assert x.size == pvar.size
                 assert y.size == pvar.size
                 p_dim = dsg.dimensions[pvar.dimensions[0]]
-                for dv in dsg.datavars():
+                for dv in dsg.data_vars():
                     assert len(dv.dimensions) == 2
                     assert z_dim.name in dv.dimensions
                     assert p_dim.name in dv.dimensions
@@ -105,10 +105,9 @@ class OrthogonalMultidimensionalProfile(CFDataset):
             )
 
         geometry = None
-        first_loc = None
+        first_row = df.iloc[0]
+        first_loc = Point(first_row.x, first_row.y)
         if geometries:
-            first_row = df.iloc[0]
-            first_loc = Point(first_row.x, first_row.y)
             coords = list(unique_justseen(zip(df.x, df.y)))
             if len(coords) > 1:
                 geometry = LineString(coords)
@@ -197,7 +196,8 @@ class OrthogonalMultidimensionalProfile(CFDataset):
         }
 
         building_index_to_drop = np.ones(t.size, dtype=bool)
-        for i, x in enumerate(self.datavars()):
+        extract_vars = list(set(self.data_vars() + self.ancillary_vars()))
+        for i, x in enumerate(extract_vars):
             vdata = np.ma.fix_invalid(np.ma.MaskedArray(x[:].astype(np.float64).round(3).flatten()))
             building_index_to_drop = (building_index_to_drop == True) & (vdata.mask == True)  # noqa
             df_data[x.name] = vdata

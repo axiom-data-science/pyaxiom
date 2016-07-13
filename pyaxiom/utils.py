@@ -6,6 +6,8 @@ import string
 import operator
 import itertools
 
+import numpy as np
+
 from pyaxiom.urn import IoosUrn
 from pyaxiom import logger
 
@@ -39,6 +41,21 @@ def unique_justseen(iterable, key=None):
         from builtins import map
 
     return map(next, map(operator.itemgetter(1), itertools.groupby(iterable, key)))
+
+
+def normalize_array(var):
+    """
+    Returns a normalized data array from a NetCDF4 variable. This is mostly
+    used to normalize string types between py2 and py3. It has no effect on types
+    other than chars/strings
+    """
+    if np.issubdtype(var.dtype, 'S'):
+        if len(var.dimensions) == 1:
+            return np.asarray([var[:].tostring().decode('utf-8')])
+        else:
+            return np.asarray([ s.tostring().decode('utf-8') for s in var[:] ])
+    else:
+        return var[:]
 
 
 def dictify_urn(urn, combine_interval=True):

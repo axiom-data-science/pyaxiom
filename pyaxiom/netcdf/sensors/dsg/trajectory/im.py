@@ -9,7 +9,7 @@ from pygc import great_distance
 from shapely.geometry import Point, LineString
 
 
-from pyaxiom.utils import unique_justseen
+from pyaxiom.utils import unique_justseen, normalize_array
 from pyaxiom.netcdf import CFDataset
 from pyaxiom import logger
 
@@ -59,7 +59,7 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
             if is_single_trajectory:
                 assert len(t.dimensions) == 1
                 time_dim = dsg.dimensions[t.dimensions[0]]
-                for dv in dsg.datavars():
+                for dv in dsg.data_vars():
                     assert len(dv.dimensions) == 1
                     assert time_dim.name in dv.dimensions
                     assert dv.size == time_dim.size
@@ -68,7 +68,7 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
                 assert len(t.dimensions) == 2
                 t_dim = dsg.dimensions[t.dimensions[0]]
                 o_dim = dsg.dimensions[t.dimensions[1]]
-                for dv in dsg.datavars():
+                for dv in dsg.data_vars():
                     assert dv.size == t.size
                     assert len(dv.dimensions) == 2
                     assert t_dim.name in dv.dimensions
@@ -145,16 +145,7 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
         pvar = self.get_variables_by_attributes(cf_role='trajectory_id')[0]            
         
         try:
-            if np.issubdtype(pvar.dtype, 'S'):
-                if len(pvar.dimensions) == 1:
-                    # Single trajectory
-                    p = np.asarray([pvar[:].tostring().decode('utf-8')])
-                else:
-                    # Multiple Trajectories
-                    p = np.asarray([ s.tostring().decode('utf-8') for s in pvar[:] ])
-            else:
-                p = pvar[:]
-            logger.debug(p)
+            p = normalize_array(pvar)
         except BaseException:
             logger.exception('Could not pull trajectory values from the variable, using indexes.')
             p = np.asarray(list(range(len(pvar))), dtype=np.integer)
@@ -181,7 +172,8 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
         }
 
         building_index_to_drop = np.ones(t.size, dtype=bool)
-        for i, x in enumerate(self.datavars()):
+        extract_vars = list(set(self.data_vars() + self.ancillary_vars()))
+        for i, x in enumerate(extract_vars):
             vdata = np.ma.fix_invalid(np.ma.MaskedArray(x[:].astype(np.float64).round(3).flatten()))
             building_index_to_drop = (building_index_to_drop == True) & (vdata.mask == True)  # noqa
             df_data[x.name] = vdata
