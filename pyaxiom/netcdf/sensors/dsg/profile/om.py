@@ -9,7 +9,7 @@ import pandas as pd
 from pygc import great_distance
 from shapely.geometry import Point, LineString
 
-from pyaxiom.utils import unique_justseen
+from pyaxiom.utils import unique_justseen, normalize_array
 from pyaxiom.netcdf import CFDataset
 from pyaxiom import logger
 
@@ -146,10 +146,10 @@ class OrthogonalMultidimensionalProfile(CFDataset):
 
         # Profiles
         try:
-            p = np.ma.fix_invalid(np.ma.MaskedArray(pvar[:]).astype(int))
+            p = normalize_array(pvar)
         except ValueError:
             p = np.asarray(list(range(len(pvar))), dtype=np.integer)
-        p = p.repeat(zs).astype(np.integer)
+        p = p.repeat(zs)
         logger.debug(['profile data size: ', p.size])
 
         # Z
