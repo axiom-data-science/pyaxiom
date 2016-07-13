@@ -58,9 +58,21 @@ class CFDataset(EnhancedDataset):
         )))
         return zvars
 
-    def datavars(self):
+    def data_vars(self):
         return self.get_variables_by_attributes(
             coordinates=lambda x: x is not None,
             units=lambda x: x is not None,
-            standard_name=lambda x: x is not None
+            standard_name=lambda x: x is not None,
+            flag_values=lambda x: x is None,
+            flag_masks=lambda x: x is None,
+            flag_meanings=lambda x: x is None
         )
+
+    def ancillary_vars(self):
+        ancillary_variables = []
+        for rv in self.get_variables_by_attributes(ancillary_variables=lambda x: x is not None):
+            # Space separated ancillary variables
+            for av in rv.ancillary_variables.split(' '):
+                if av in self.variables:
+                    ancillary_variables.append(self.variables[av])
+        return list(set(ancillary_variables))

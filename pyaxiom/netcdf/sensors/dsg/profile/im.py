@@ -58,7 +58,7 @@ class IncompleteMultidimensionalProfile(CFDataset):
             assert y.size == pvar.size
             p_dim = dsg.dimensions[pvar.dimensions[0]]
             z_dim = dsg.dimensions[[ d for d in z.dimensions if d != p_dim.name ][0]]
-            for dv in dsg.datavars() + [z]:
+            for dv in dsg.data_vars() + [z]:
                 assert len(dv.dimensions) == 2
                 assert z_dim.name in dv.dimensions
                 assert p_dim.name in dv.dimensions
@@ -173,7 +173,8 @@ class IncompleteMultidimensionalProfile(CFDataset):
         }
 
         building_index_to_drop = np.ones(t.size, dtype=bool)
-        for i, x in enumerate(self.datavars()):
+        extract_vars = list(set(self.data_vars() + self.ancillary_vars()))
+        for i, x in enumerate(extract_vars):
             vdata = np.ma.fix_invalid(np.ma.MaskedArray(x[:].astype(np.float64).round(3).flatten()))
             building_index_to_drop = (building_index_to_drop == True) & (vdata.mask == True)  # noqa
             df_data[x.name] = vdata

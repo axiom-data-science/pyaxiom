@@ -19,6 +19,8 @@ logger.handlers = [logging.StreamHandler()]
     (IncompleteMultidimensionalProfile,         os.path.join(os.path.dirname(__file__), 'profile', 'resources', 'im-multiple.nc')),
     (IncompleteMultidimensionalTrajectory,      os.path.join(os.path.dirname(__file__), 'trajectory', 'resources', 'im-single.nc')),
     (IncompleteMultidimensionalTrajectory,      os.path.join(os.path.dirname(__file__), 'trajectory', 'resources', 'im-multiple.nc')),
+    (ContinousRaggedTrajectoryProfile,          os.path.join(os.path.dirname(__file__), 'trajectoryProfile', 'resources', 'cr-single.nc')),
+    (ContinousRaggedTrajectoryProfile,          os.path.join(os.path.dirname(__file__), 'trajectoryProfile', 'resources', 'cr-multiple.nc')),
 ])
 def test_is_mine(klass, fp):
     allsubs = list(all_subclasses(CFDataset))
