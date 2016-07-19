@@ -2,7 +2,7 @@
 from pyaxiom.netcdf import CFDataset
 
 
-class ContinousRaggedTrajectory(CFDataset):
+class ContiguousRaggedTrajectory(CFDataset):
 
     def from_dataframe(self, df, variable_attributes=None, global_attributes=None):
         variable_attributes = variable_attributes or {}
