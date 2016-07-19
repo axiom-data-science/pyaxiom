@@ -22,7 +22,7 @@ git commit -m "Release $1"
 git tag $1
 
 # Release on PyPi
-python setup.py sdist upload
+python setup.py sdist upload -r warehouse
 
 # Push to Git
 git push --tags origin master
