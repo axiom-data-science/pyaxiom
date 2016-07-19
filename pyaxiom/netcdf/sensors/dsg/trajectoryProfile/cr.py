@@ -13,7 +13,7 @@ from pyaxiom.netcdf import CFDataset
 from pyaxiom import logger
 
 
-class ContinousRaggedTrajectoryProfile(CFDataset):
+class ContiguousRaggedTrajectoryProfile(CFDataset):
 
     @classmethod
     def is_mine(cls, dsg):

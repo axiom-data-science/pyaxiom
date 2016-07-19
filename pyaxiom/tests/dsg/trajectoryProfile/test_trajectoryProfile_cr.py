@@ -4,7 +4,7 @@ import unittest
 from dateutil.parser import parse as dtparse
 import numpy as np
 
-from pyaxiom.netcdf.sensors.dsg import ContinousRaggedTrajectoryProfile
+from pyaxiom.netcdf.sensors.dsg import ContiguousRaggedTrajectoryProfile
 
 import logging
 from pyaxiom import logger
@@ -19,15 +19,15 @@ class TestContinousRaggedTrajectoryProfile(unittest.TestCase):
         self.multi = os.path.join(os.path.dirname(__file__), 'resources', 'cr-multiple.nc')
 
     def test_crtp_load(self):
-        ContinousRaggedTrajectoryProfile(self.single)
-        ContinousRaggedTrajectoryProfile(self.multi)
+        ContiguousRaggedTrajectoryProfile(self.single)
+        ContiguousRaggedTrajectoryProfile(self.multi)
 
     def test_crtp_dataframe(self):
-        ContinousRaggedTrajectoryProfile(self.single).to_dataframe()
-        ContinousRaggedTrajectoryProfile(self.multi).to_dataframe()
+        ContiguousRaggedTrajectoryProfile(self.single).to_dataframe()
+        ContiguousRaggedTrajectoryProfile(self.multi).to_dataframe()
 
     def test_crtp_calculated_metadata(self):
-        s = ContinousRaggedTrajectoryProfile(self.single).calculated_metadata()
+        s = ContiguousRaggedTrajectoryProfile(self.single).calculated_metadata()
         assert s.min_t == dtparse('2014-11-25 18:57:30')
         assert s.max_t == dtparse('2014-11-27 07:10:30')
         assert len(s.trajectories) == 1
@@ -39,7 +39,7 @@ class TestContinousRaggedTrajectoryProfile(unittest.TestCase):
         assert s.trajectories["sp025-20141125T1730"].first_loc.y == 34.30818
         assert len(s.trajectories["sp025-20141125T1730"].profiles) == 17
 
-        m = ContinousRaggedTrajectoryProfile(self.multi).calculated_metadata()
+        m = ContiguousRaggedTrajectoryProfile(self.multi).calculated_metadata()
         assert m.min_t == dtparse('1990-01-01 00:00:00')
         assert m.max_t == dtparse('1990-01-03 02:00:00')
         assert len(m.trajectories) == 5
