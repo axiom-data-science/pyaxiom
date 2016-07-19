@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
 import os
+import simplejson as json
+from datetime import datetime
 
 from pyaxiom.netcdf import EnhancedDataset
 from pyaxiom.utils import all_subclasses
 
 from pyaxiom import logger
+from pyaxiom.utils import NumpyEncoder
 
 
 class CFDataset(EnhancedDataset):
+
+    default_fill_value = -9999.9
+    default_time_unit = 'seconds since 1990-01-01 00:00:00'
 
     @classmethod
     def load(cls, path):
@@ -76,3 +82,66 @@ class CFDataset(EnhancedDataset):
                 if av in self.variables:
                     ancillary_variables.append(self.variables[av])
         return list(set(ancillary_variables))
+
+    def update_attributes(self, attributes):
+        self.setncatts(attributes.pop('global', {}))
+        for k, v in attributes.items():
+            if k in self.variables:
+                for n, z in v.items():
+                    try:
+                        self.variables[k].setncattr(n, z)
+                    except BaseException:
+                        logger.warning('Could not set attribute {} on {}'.format(n, k))
+        self.sync()
+
+    def nc_attributes(self):
+        return {
+            'global' : {
+                'Conventions': 'CF-1.6',
+                'date_created': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z"),
+            },
+            'time' : {
+                'units' : self.default_time_unit,
+                'standard_name' : 'time',
+                'long_name': 'time'
+            },
+            'latitude' : {
+                'units' : 'degrees_north',
+                'standard_name' : 'latitude',
+                'long_name' : 'latitude',
+                'axis': 'Y'
+            },
+            'longitude' : {
+                'units' : 'degrees_east',
+                'standard_name' : 'longitude',
+                'long_name' : 'longitude',
+                'axis': 'X'
+            },
+            'z' : {
+                'units' : 'm',
+                'standard_name' : 'depth',
+                'long_name' : 'depth',
+                'positive': 'down',
+                'axis': 'Z'
+            },
+            'crs' : {
+                'long_name' : 'http://www.opengis.net/def/crs/EPSG/0/4326',
+                'grid_mapping_name' : 'latitude_longitude',
+                'epsg_code' : 'EPSG:4326',
+                'semi_major_axis' : float(6378137.0),
+                'inverse_flattening' : float(298.257223563)
+            }
+        }
+
+    def json_attributes(self):
+        js = {'global': {}}
+
+        for k in self.ncattrs():
+            js['global'][k] = self.getncattr(k)
+
+        for varname, var in self.variables.items():
+            js[varname] = {}
+            for k in var.ncattrs():
+                js[varname][k] = var.getncattr(k)
+
+        return json.loads(json.dumps(js, cls=NumpyEncoder))

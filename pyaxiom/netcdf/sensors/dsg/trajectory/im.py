@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import tempfile
+
 from datetime import datetime
 from collections import namedtuple
 
@@ -9,8 +11,9 @@ from pygc import great_distance
 from shapely.geometry import Point, LineString
 
 
-from pyaxiom.utils import unique_justseen, normalize_array
+from pyaxiom.utils import unique_justseen, normalize_array, get_dtype, dict_update
 from pyaxiom.netcdf import CFDataset
+from pyaxiom.netcdf.utils import cf_safe_name
 from pyaxiom import logger
 
 
@@ -80,10 +83,79 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
 
         return True
 
-    def from_dataframe(self, df, variable_attributes=None, global_attributes=None):
-        variable_attributes = variable_attributes or {}
-        global_attributes = global_attributes or {}
-        raise NotImplementedError
+    @classmethod
+    def from_dataframe(cls, df, output, **kwargs):
+        reserved_columns = ['trajectory', 't', 'x', 'y', 'z', 'distance']
+        data_columns = [ d for d in df.columns if d not in reserved_columns ]
+
+        with IncompleteMultidimensionalTrajectory(output, 'w') as nc:
+
+            trajectory_group = df.groupby('trajectory')
+            max_obs = trajectory_group.size().max()
+
+            unique_trajectories = df.trajectory.unique()
+            nc.createDimension('trajectory', unique_trajectories.size)
+            nc.createDimension('obs', max_obs)
+
+            # Metadata variables
+            nc.createVariable('crs', 'i4')
+
+            trajectory = nc.createVariable('trajectory', get_dtype(df.trajectory), ('trajectory',))
+
+            # Create all of the variables
+            time = nc.createVariable('time', 'i4', ('trajectory', 'obs'), fill_value=int(cls.default_fill_value))
+            z = nc.createVariable('z', get_dtype(df.z), ('trajectory', 'obs'), fill_value=df.z.dtype.type(cls.default_fill_value))
+            latitude = nc.createVariable('latitude', get_dtype(df.y), ('trajectory', 'obs'), fill_value=df.y.dtype.type(cls.default_fill_value))
+            longitude = nc.createVariable('longitude', get_dtype(df.x), ('trajectory', 'obs'), fill_value=df.x.dtype.type(cls.default_fill_value))
+            distance = nc.createVariable('distance', get_dtype(df.distance), ('trajectory', 'obs'), fill_value=df.distance.dtype.type(cls.default_fill_value))
+
+            attributes = dict_update(nc.nc_attributes(), kwargs.pop('attributes', {}))
+
+            for i, (uid, gdf) in enumerate(trajectory_group):
+                trajectory[i] = uid
+
+                # tolist() converts to a python datetime object without timezone
+                g = gdf.t.fillna(999999).tolist()   # 999999 is a dummy value
+                NaTs = gdf.t.isnull()
+                timenums = np.ma.MaskedArray(nc4.date2num(g, units=cls.default_time_unit))
+                timenums.mask = NaTs
+                time[i, :] = timenums
+
+                latitude[i, :] = gdf.y.fillna(latitude._FillValue).values
+                longitude[i, :] = gdf.x.fillna(longitude._FillValue).values
+                z[i, :] = gdf.z.fillna(z._FillValue).values
+                distance[i, :] = gdf.distance.fillna(distance._FillValue).values
+
+                for c in data_columns:
+                    # Create variable if it doesn't exist
+                    var_name = cf_safe_name(c)
+                    if var_name not in nc.variables:
+                        if np.issubdtype(gdf[c].dtype, 'S') or gdf[c].dtype == object:
+                            # AttributeError: cannot set _FillValue attribute for VLEN or compound variable
+                            v = nc.createVariable(var_name, get_dtype(gdf[c]), ('trajectory', 'obs'))
+                        else:
+                            v = nc.createVariable(var_name, get_dtype(gdf[c]), ('trajectory', 'obs'), fill_value=gdf[c].dtype.type(cls.default_fill_value))
+
+                        if var_name not in attributes:
+                            attributes[var_name] = {}
+                        attributes[var_name] = dict_update(attributes[var_name], {
+                            'coordinates' : 'time latitude longitude z',
+                        })
+                    else:
+                        v = nc.variables[var_name]
+
+                    if hasattr(v, '_FillValue'):
+                        vvalues = gdf[c].fillna(v._FillValue).values
+                    else:
+                        vvalues = gdf[c].values
+
+                    sl = slice(i, vvalues.size)
+                    v[i, sl] = vvalues
+
+            # Set global attributes
+            nc.update_attributes(attributes)
+
+        return IncompleteMultidimensionalTrajectory(output, **kwargs)
 
     def calculated_metadata(self, geometries=True, clean_cols=True, clean_rows=True):
         df = self.to_dataframe(clean_cols=clean_cols, clean_rows=clean_rows)
@@ -128,7 +200,11 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
 
         # T
         tvar = self.t_axes()[0]
-        t = nc4.num2date(tvar[:], tvar.units, getattr(tvar, 'calendar', 'standard')).flatten()
+        t = np.ma.MaskedArray(nc4.num2date(tvar[:], tvar.units, getattr(tvar, 'calendar', 'standard'))).flatten()
+        # Patch the time variable back to its original mask, since num2date
+        # breaks any missing/fill values
+        if hasattr(tvar[0], 'mask'):
+            t.mask = tvar[:].mask
         logger.debug(['time data size: ', t.size])
 
         # X
@@ -142,15 +218,15 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
         logger.debug(['y data size: ', y.size])
 
         # Trajectories
-        pvar = self.get_variables_by_attributes(cf_role='trajectory_id')[0]            
-        
+        pvar = self.get_variables_by_attributes(cf_role='trajectory_id')[0]
+
         try:
             p = normalize_array(pvar)
         except BaseException:
             logger.exception('Could not pull trajectory values from the variable, using indexes.')
             p = np.asarray(list(range(len(pvar))), dtype=np.integer)
-        
-        # The Dimension that the trajectory id variable doesn't have is what 
+
+        # The Dimension that the trajectory id variable doesn't have is what
         # the trajectory data needs to be repeated by
         dim_diff = self.dimensions[list(set(tvar.dimensions).difference(set(pvar.dimensions)))[0]]
         if dim_diff:
@@ -189,3 +265,21 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
             df = df.iloc[~building_index_to_drop]
 
         return df
+
+    def nc_attributes(self):
+        atts = super(IncompleteMultidimensionalTrajectory, self).nc_attributes()
+        return dict_update(atts, {
+            'global' : {
+                'featureType': 'trajectory',
+                'cdm_data_type': 'Trajectory'
+            },
+            'trajectory' : {
+                'cf_role': 'trajectory',
+                'long_name' : 'trajectory identifier'
+            },
+            'distance' : {
+                'long_name': 'Great circle distance between trajectory points',
+                'standard_name': 'distance_between_trajectory_points',
+                'units': 'm'
+            }
+        })

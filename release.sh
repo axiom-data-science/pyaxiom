@@ -28,7 +28,7 @@ python setup.py sdist upload
 git push --tags origin master
 
 # Build 2.7
-conda build -c ioos --python 2.7 conda-recipe
+conda build -c conda-forge --python 2.7 conda-recipe
 PACKAGE_PATH=`ls ~/miniconda3/conda-bld/**/$NAME*-$1-py27*.tar.bz2`
 conda convert --platform all $PACKAGE_PATH -o conda-recipe/py27
 for f in conda-recipe/py27/**/$NAME*; do
@@ -37,7 +37,7 @@ done
 rm -r conda-recipe/py27
 
 # Build 3.4
-conda build -c ioos --python 3.4 conda-recipe
+conda build -c conda-forge --python 3.4 conda-recipe
 PACKAGE_PATH=`ls ~/miniconda3/conda-bld/**/$NAME*-$1-py34*.tar.bz2`
 conda convert --platform all $PACKAGE_PATH -o conda-recipe/py34
 for f in conda-recipe/py34/**/$NAME*; do
@@ -46,7 +46,7 @@ done
 rm -r conda-recipe/py34
 
 # Build 3.5
-conda build -c ioos --python 3.5 conda-recipe
+conda build -c conda-forge --python 3.5 conda-recipe
 PACKAGE_PATH=`ls ~/miniconda3/conda-bld/**/$NAME*-$1-py35*.tar.bz2`
 conda convert --platform all $PACKAGE_PATH -o conda-recipe/py35
 for f in conda-recipe/py35/**/$NAME*; do

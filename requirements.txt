@@ -4,6 +4,7 @@ python-dateutil
 netCDF4>=1.2.0
 pandas
 pygc
+simplejson
 shapely
 
 #Optional
