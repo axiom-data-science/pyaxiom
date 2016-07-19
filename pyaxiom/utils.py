@@ -1,10 +1,11 @@
 #!python
 # coding=utf-8
-
+import base64
 import random
 import string
 import operator
 import itertools
+import simplejson as json
 
 import numpy as np
 
@@ -56,6 +57,29 @@ def normalize_array(var):
             return np.asarray([ s.tostring().decode('utf-8') for s in var[:] ])
     else:
         return var[:]
+
+
+def get_dtype(obj):
+    if hasattr(obj, 'dtype'):
+        if obj.dtype == object:
+            return str
+        return obj.dtype
+    elif isinstance(obj, (tuple, list)):
+        return getattr(obj[0], 'dtype', type(obj[0]))
+    else:
+        return type(obj)
+
+
+def dict_update(d, u):
+    # http://stackoverflow.com/a/3233356
+    import collections
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            r = dict_update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
 
 
 def dictify_urn(urn, combine_interval=True):
@@ -226,3 +250,26 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
                 version=None)
 
     return u.urn
+
+
+class NumpyEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        """If input object is an ndarray it will be converted into a dict
+        holding dtype, shape and the data, base64 encoded.
+        """
+        if isinstance(obj, np.ndarray):
+            if obj.flags['C_CONTIGUOUS']:
+                obj_data = obj.data
+            else:
+                cont_obj = np.ascontiguousarray(obj)
+                assert(cont_obj.flags['C_CONTIGUOUS'])
+                obj_data = cont_obj.data
+            data_b64 = base64.b64encode(obj_data)
+            return dict(__ndarray__=data_b64,
+                        dtype=str(obj.dtype),
+                        shape=obj.shape)
+        elif isinstance(obj, np.generic):
+            return np.asscalar(obj)
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder(self, obj)

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import tempfile
 
 import unittest
 from dateutil.parser import parse as dtparse
@@ -24,8 +25,15 @@ class TestIncompleteMultidimensionalTrajectory(unittest.TestCase):
         IncompleteMultidimensionalTrajectory(self.multi)
 
     def test_crt_dataframe(self):
-        IncompleteMultidimensionalTrajectory(self.single).to_dataframe()
-        IncompleteMultidimensionalTrajectory(self.multi).to_dataframe()
+        single_df = IncompleteMultidimensionalTrajectory(self.single).to_dataframe(clean_rows=False)
+        single_tmp = tempfile.mkstemp(suffix='.nc')[-1]
+        single_nc = IncompleteMultidimensionalTrajectory.from_dataframe(single_df, single_tmp)
+        os.remove(single_tmp)
+
+        multip_tmp = tempfile.mkstemp(suffix='.nc')[-1]
+        multip_df = IncompleteMultidimensionalTrajectory(self.multi).to_dataframe(clean_rows=False)
+        multip_nc = IncompleteMultidimensionalTrajectory.from_dataframe(multip_df, multip_tmp)
+        os.remove(multip_tmp)
 
     def test_crt_calculated_metadata(self):
         s = IncompleteMultidimensionalTrajectory(self.single).calculated_metadata()

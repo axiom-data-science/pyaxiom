@@ -8,8 +8,9 @@ import netCDF4 as nc4
 from pygc import great_distance
 from shapely.geometry import Point, LineString
 
-from pyaxiom.utils import unique_justseen, normalize_array
+from pyaxiom.utils import unique_justseen, normalize_array, get_dtype, dict_update
 from pyaxiom.netcdf import CFDataset
+from pyaxiom.netcdf.utils import cf_safe_name
 from pyaxiom import logger
 
 
@@ -69,11 +70,77 @@ class IncompleteMultidimensionalProfile(CFDataset):
 
         return True
 
-    def from_dataframe(self, df, variable_attributes=None, global_attributes=None):
-        variable_attributes = variable_attributes or {}
-        global_attributes = global_attributes or {}
+    @classmethod
+    def from_dataframe(cls, df, output, **kwargs):
+        reserved_columns = ['trajectory', 'profile', 't', 'x', 'y', 'z', 'distance']
+        data_columns = [ d for d in df.columns if d not in reserved_columns ]
 
-        raise NotImplementedError
+        with IncompleteMultidimensionalProfile(output, 'w') as nc:
+
+            profile_group = df.groupby('profile')
+            max_zs = profile_group.size().max()
+
+            unique_profiles = df.profile.unique()
+            nc.createDimension('profile', unique_profiles.size)
+            nc.createDimension('z', max_zs)
+
+            # Metadata variables
+            nc.createVariable('crs', 'i4')
+
+            profile = nc.createVariable('profile', get_dtype(df.profile), ('profile',))
+
+            # Create all of the variables
+            time = nc.createVariable('time', 'i4', ('profile',))
+            latitude = nc.createVariable('latitude', get_dtype(df.y), ('profile',))
+            longitude = nc.createVariable('longitude', get_dtype(df.x), ('profile',))
+            if 'distance' in df.columns:
+                distance = nc.createVariable('distance', get_dtype(df.distance), ('profile',))
+            z = nc.createVariable('z', get_dtype(df.z), ('profile', 'z'), fill_value=df.z.dtype.type(cls.default_fill_value))
+
+            attributes = dict_update(nc.nc_attributes(), kwargs.pop('attributes', {}))
+
+            for i, (uid, pdf) in enumerate(profile_group):
+                profile[i] = uid
+
+                time[i] = nc4.date2num(pdf.t.iloc[0], units=cls.default_time_unit)
+                latitude[i] = pdf.y.iloc[0]
+                longitude[i] = pdf.x.iloc[0]
+                if 'distance' in pdf.columns:
+                    distance[i] = pdf.distance.iloc[0]
+
+                zvalues = pdf.z.fillna(z._FillValue).values
+                sl = slice(0, zvalues.size)
+                z[i, sl] = zvalues
+                for c in data_columns:
+                    # Create variable if it doesn't exist
+                    var_name = cf_safe_name(c)
+                    if var_name not in nc.variables:
+                        if np.issubdtype(pdf[c].dtype, 'S') or pdf[c].dtype == object:
+                            # AttributeError: cannot set _FillValue attribute for VLEN or compound variable
+                            v = nc.createVariable(var_name, get_dtype(pdf[c]), ('profile', 'z'))
+                        else:
+                            v = nc.createVariable(var_name, get_dtype(pdf[c]), ('profile', 'z'), fill_value=pdf[c].dtype.type(cls.default_fill_value))
+                            
+                        if var_name not in attributes:
+                            attributes[var_name] = {}
+                        attributes[var_name] = dict_update(attributes[var_name], {
+                            'coordinates' : 'time latitude longitude z',
+                        })
+                    else:
+                        v = nc.variables[var_name]
+
+                    if hasattr(v, '_FillValue'):
+                        vvalues = pdf[c].fillna(v._FillValue).values
+                    else:
+                        vvalues = pdf[c].values
+
+                    sl = slice(0, vvalues.size)
+                    v[i, sl] = vvalues
+
+            # Set global attributes
+            nc.update_attributes(attributes)
+
+        return IncompleteMultidimensionalProfile(output, **kwargs)
 
     def calculated_metadata(self, geometries=True, clean_cols=True, clean_rows=True):
         df = self.to_dataframe(clean_cols=clean_cols, clean_rows=clean_rows)
@@ -190,3 +257,21 @@ class IncompleteMultidimensionalProfile(CFDataset):
             df = df.iloc[~building_index_to_drop]
 
         return df
+
+    def nc_attributes(self):
+        atts = super(IncompleteMultidimensionalProfile, self).nc_attributes()
+        return dict_update(atts, {
+            'global' : {
+                'featureType': 'profile',
+                'cdm_data_type': 'Profile'
+            },
+            'profile' : {
+                'cf_role': 'profile',
+                'long_name' : 'profile identifier'
+            },
+            'distance' : {
+                'long_name': 'Great circle distance between trajectory points',
+                'standard_name': 'distance_between_trajectory_points',
+                'units': 'm'
+            }
+        })

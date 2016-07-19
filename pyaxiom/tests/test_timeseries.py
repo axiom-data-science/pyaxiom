@@ -577,7 +577,6 @@ class TestTimeSeries(unittest.TestCase):
         assert nc is not None
 
         datavar = nc.variables.get('temperature')
-        logger.info(datavar.ncattrs())
         instrument_var_name = datavar.instrument
 
         instvar = nc.variables[instrument_var_name]

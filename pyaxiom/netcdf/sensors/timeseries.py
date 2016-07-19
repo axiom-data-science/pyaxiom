@@ -19,6 +19,8 @@ from pyaxiom.netcdf.dataset import EnhancedDataset
 
 def get_type(obj):
     if hasattr(obj, 'dtype'):
+        if obj.dtype == object:
+            return str
         return obj.dtype
     elif isinstance(obj, (tuple, list)):
         return getattr(obj[0], 'dtype', type(obj[0]))
