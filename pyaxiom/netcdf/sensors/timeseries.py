@@ -432,8 +432,10 @@ class TimeSeries(object):
             # Create time as int32 because DAP does not support int64 until DAP4.
             verticals = verticals.astype(np.int32)
 
+        # Don't unique Time... rely on the person submitting the data correctly.
+        # That means we allow duplicate times, as long as the data contains duplicate times as well.
         self.time_indexes = np.argsort(times)
-        unique_times = times[self.time_indexes]
+        full_times = times[self.time_indexes]
 
         # Unique the vertical values
         # Special case for all zeros.  Added here for greater readability.
@@ -453,6 +455,8 @@ class TimeSeries(object):
             unique_verticals = verticals
             self.vertical_indexes = np.arange(len(verticals))
 
+        # Calculate time stats based on a unique time array
+        unique_times = np.unique(full_times)
         starting = datetime.utcfromtimestamp(unique_times[0])
         ending   = datetime.utcfromtimestamp(unique_times[-1])
 
@@ -471,14 +475,14 @@ class TimeSeries(object):
             self._nc.setncattr("time_coverage_resolution", "P%sS" % str(int(round(time_diffs))))
 
         # Time
-        self.time_chunk = min(unique_times.size, 1000)
-        self._nc.createDimension("time", unique_times.size)
-        self.time = self._nc.createVariable(self.time_axis_name, get_type(unique_times), ("time",), chunksizes=(self.time_chunk,))
+        self.time_chunk = min(full_times.size, 1000)
+        self._nc.createDimension("time", full_times.size)
+        self.time = self._nc.createVariable(self.time_axis_name, get_type(full_times), ("time",), chunksizes=(self.time_chunk,))
         self.time.units          = "seconds since 1970-01-01T00:00:00Z"
         self.time.standard_name  = "time"
         self.time.long_name      = "time of measurement"
         self.time.calendar       = "gregorian"
-        self.time[:] = unique_times
+        self.time[:] = full_times
 
         logger.debug("Setting up {}...".format(self.vertical_axis_name))
         # Figure out if we are creating a Profile or just a TimeSeries
