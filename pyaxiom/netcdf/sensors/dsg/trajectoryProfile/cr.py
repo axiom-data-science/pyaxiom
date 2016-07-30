@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+#!python
+# coding=utf-8
 from datetime import datetime
 from collections import namedtuple
 
