@@ -1,7 +1,10 @@
-# -*- coding: utf-8 -*-
+#!python
+# coding=utf-8
 import os
 import simplejson as json
 from datetime import datetime
+
+import numpy as np
 
 from pyaxiom.netcdf import EnhancedDataset
 from pyaxiom.utils import all_subclasses
@@ -142,6 +145,13 @@ class CFDataset(EnhancedDataset):
         for varname, var in self.variables.items():
             js[varname] = {}
             for k in var.ncattrs():
-                js[varname][k] = var.getncattr(k)
+                z = var.getncattr(k)
+                try:
+                    isnan = np.isnan(z)
+                    assert isnan is False
+                except AssertionError:
+                    js[varname][k] = None
+                except TypeError:
+                    js[varname][k] = z
 
         return json.loads(json.dumps(js, cls=NumpyEncoder))
