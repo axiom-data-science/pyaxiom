@@ -266,7 +266,7 @@ class IncompleteMultidimensionalProfile(CFDataset):
                 'cdm_data_type': 'Profile'
             },
             'profile' : {
-                'cf_role': 'profile',
+                'cf_role': 'profile_id',
                 'long_name' : 'profile identifier'
             },
             'distance' : {
