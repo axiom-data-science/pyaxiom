@@ -93,7 +93,7 @@ class IncompleteMultidimensionalProfile(CFDataset):
             time = nc.createVariable('time', 'i4', ('profile',))
             latitude = nc.createVariable('latitude', get_dtype(df.y), ('profile',))
             longitude = nc.createVariable('longitude', get_dtype(df.x), ('profile',))
-            if 'distance' in df.columns:
+            if 'distance' in df:
                 distance = nc.createVariable('distance', get_dtype(df.distance), ('profile',))
             z = nc.createVariable('z', get_dtype(df.z), ('profile', 'z'), fill_value=df.z.dtype.type(cls.default_fill_value))
 
@@ -105,7 +105,7 @@ class IncompleteMultidimensionalProfile(CFDataset):
                 time[i] = nc4.date2num(pdf.t.iloc[0], units=cls.default_time_unit)
                 latitude[i] = pdf.y.iloc[0]
                 longitude[i] = pdf.x.iloc[0]
-                if 'distance' in pdf.columns:
+                if 'distance' in pdf:
                     distance[i] = pdf.distance.iloc[0]
 
                 zvalues = pdf.z.fillna(z._FillValue).values
