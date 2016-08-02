@@ -107,7 +107,8 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
             z = nc.createVariable('z', get_dtype(df.z), ('trajectory', 'obs'), fill_value=df.z.dtype.type(cls.default_fill_value))
             latitude = nc.createVariable('latitude', get_dtype(df.y), ('trajectory', 'obs'), fill_value=df.y.dtype.type(cls.default_fill_value))
             longitude = nc.createVariable('longitude', get_dtype(df.x), ('trajectory', 'obs'), fill_value=df.x.dtype.type(cls.default_fill_value))
-            distance = nc.createVariable('distance', get_dtype(df.distance), ('trajectory', 'obs'), fill_value=df.distance.dtype.type(cls.default_fill_value))
+            if 'distance' in df:
+                distance = nc.createVariable('distance', get_dtype(df.distance), ('trajectory', 'obs'), fill_value=df.distance.dtype.type(cls.default_fill_value))
 
             attributes = dict_update(nc.nc_attributes(), kwargs.pop('attributes', {}))
 
@@ -124,7 +125,8 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
                 latitude[i, :] = gdf.y.fillna(latitude._FillValue).values
                 longitude[i, :] = gdf.x.fillna(longitude._FillValue).values
                 z[i, :] = gdf.z.fillna(z._FillValue).values
-                distance[i, :] = gdf.distance.fillna(distance._FillValue).values
+                if 'distance' in gdf:
+                    distance[i, :] = gdf.distance.fillna(distance._FillValue).values
 
                 for c in data_columns:
                     # Create variable if it doesn't exist
