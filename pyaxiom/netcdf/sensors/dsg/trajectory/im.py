@@ -151,7 +151,7 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
                     else:
                         vvalues = gdf[c].values
 
-                    sl = slice(i, vvalues.size)
+                    sl = slice(0, vvalues.size)
                     v[i, sl] = vvalues
 
             # Set global attributes
