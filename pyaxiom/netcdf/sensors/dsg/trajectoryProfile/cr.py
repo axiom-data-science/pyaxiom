@@ -96,8 +96,10 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
                 geometry=geometry
             )
 
-        meta = namedtuple('Metadata', ['min_t', 'max_t', 'trajectories'])
+        meta = namedtuple('Metadata', ['min_z', 'max_z', 'min_t', 'max_t', 'trajectories'])
         return meta(
+            min_z=df.z.min(),
+            max_z=df.z.max(),
             min_t=df.t.min(),
             max_t=df.t.max(),
             trajectories=trajectories

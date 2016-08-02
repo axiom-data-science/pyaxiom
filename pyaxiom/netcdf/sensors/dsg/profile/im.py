@@ -170,8 +170,10 @@ class IncompleteMultidimensionalProfile(CFDataset):
             elif len(coords) == 1:
                 geometry = first_loc  # noqa
 
-        meta = namedtuple('Metadata', ['min_t', 'max_t', 'profiles', 'first_loc', 'geometry'])
+        meta = namedtuple('Metadata', ['min_z', 'max_z', 'min_t', 'max_t', 'profiles', 'first_loc', 'geometry'])
         return meta(
+            min_z=df.z.min(),
+            max_z=df.z.max(),
             min_t=df.t.min(),
             max_t=df.t.max(),
             profiles=profiles,
