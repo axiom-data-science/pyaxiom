@@ -149,7 +149,8 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
                     if hasattr(v, '_FillValue'):
                         vvalues = gdf[c].fillna(v._FillValue).values
                     else:
-                        vvalues = gdf[c].values
+                        # Use an empty string... better than nothing!
+                        vvalues = gdf[c].fillna('').values
 
                     sl = slice(0, vvalues.size)
                     v[i, sl] = vvalues
