@@ -25,6 +25,7 @@ requirements:
         - pandas
         - pyncml
         - pynco  # [not win]
+        - simplejson
 
 test:
     imports:
