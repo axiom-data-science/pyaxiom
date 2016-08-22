@@ -87,8 +87,9 @@ class OrthogonalMultidimensionalProfile(CFDataset):
 
         raise NotImplementedError
 
-    def calculated_metadata(self, geometries=True, clean_cols=True, clean_rows=True):
-        df = self.to_dataframe(clean_cols=clean_cols, clean_rows=clean_rows)
+    def calculated_metadata(self, df=None, geometries=True, clean_cols=True, clean_rows=True):
+        if df is None:
+            df = self.to_dataframe(clean_cols=clean_cols, clean_rows=clean_rows)
 
         profiles = {}
         for pid, pgroup in df.groupby('profile'):
