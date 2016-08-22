@@ -87,7 +87,13 @@ class CFDataset(EnhancedDataset):
         return list(set(ancillary_variables))
 
     def update_attributes(self, attributes):
-        self.setncatts(attributes.pop('global', {}))
+
+        for k, v in attributes.pop('global', {}).items():
+            try:
+                self.setncattr(k, v)
+            except BaseException:
+                logger.warning('Could not set attribute {}: {}'.format(k, v))
+
         for k, v in attributes.items():
             if k in self.variables:
                 for n, z in v.items():
