@@ -142,7 +142,15 @@ class CFDataset(EnhancedDataset):
             }
         }
 
-    def json_attributes(self):
+    def json_attributes(self, vfuncs=None):
+        """
+        vfuncs can be any callable that accepts a single argument, the
+        Variable object, and returns a dictionary of new attributes to
+        set. These will overwrite existing attributes
+        """
+
+        vfuncs = vfuncs or []
+
         js = {'global': {}}
 
         for k in self.ncattrs():
@@ -159,5 +167,11 @@ class CFDataset(EnhancedDataset):
                     js[varname][k] = None
                 except TypeError:
                     js[varname][k] = z
+
+            for vf in vfuncs:
+                try:
+                    js[varname].update(vfuncs(var))
+                except BaseException:
+                    logger.exception("Could not apply custom variable attribue function")
 
         return json.loads(json.dumps(js, cls=NumpyEncoder))
