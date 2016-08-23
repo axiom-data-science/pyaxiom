@@ -116,7 +116,7 @@ class TimeSeries(object):
             nc.setncattr("date_created", now_date)
             nc.setncattr("date_modified", now_date)
             nc.setncattr("date_issued", now_date)
-            if "date_metadata_modified" not in nc:
+            if not hasattr(nc, "date_metadata_modified"):
                 nc.setncattr("date_metadata_modified", now_date)
             nc.setncattr('cdm_data_type', 'Station')
 
@@ -156,7 +156,7 @@ class TimeSeries(object):
             nc.setncattr("geospatial_lon_units", "degrees_east")
 
             nc.setncattr("geospatial_bounds", "POINT({} {})".format(longitude, latitude))
-            if "geospatial_bounds_crs" not in nc:
+            if not hasattr(nc, "geospatial_bounds_crs"):
                 nc.setncattr("geospatial_bounds_crs", "4326")
 
             # Metadata variables
@@ -547,7 +547,7 @@ class TimeSeries(object):
         return self._nc
 
     def __del__(self):
-        if self._nc:
+        if hasattr(self, '_nc') and self._nc:
             self._nc.close()
 
 
