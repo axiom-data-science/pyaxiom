@@ -101,8 +101,9 @@ class TimeSeries(object):
             # These are set by this script, we don't someone to be able to set them manually
             global_skips = ["time_coverage_start", "time_coverage_end", "time_coverage_duration", "time_coverage_resolution",
                             "featureType", "geospatial_vertical_positive", "geospatial_vertical_min", "geospatial_vertical_max",
-                            "geospatial_lat_min", "geospatial_lon_min", "geospatial_lat_max", "geospatial_lon_max",
-                            "geospatial_vertical_resolution", "Conventions", "Metadata_Conventions", "date_created"]
+                            "geospatial_lat_min", "geospatial_lon_min", "geospatial_lat_max", "geospatial_lon_max", "geospatial_bounds"
+                            "geospatial_vertical_resolution", "geospatial_lat_resolution", "geospatial_lon_resolution",
+                            "Conventions", "Metadata_Conventions", "date_created", "date_modified", "date_issued"]
             for k, v in global_attributes.items():
                 if v is None:
                     v = "None"
@@ -110,10 +111,13 @@ class TimeSeries(object):
                     nc.setncattr(k, v)
 
             now_date = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z")
-            nc.setncattr("Conventions", "CF-1.6")
+            nc.setncattr("Conventions", "CF-1.6,ACDD-1.3")
             nc.setncattr("Metadata_Conventions", "Unidata Dataset Discovery v1.0")
             nc.setncattr("date_created", now_date)
+            nc.setncattr("date_modified", now_date)
             nc.setncattr("date_issued", now_date)
+            if "date_metadata_modified" not in nc:
+                nc.setncattr("date_metadata_modified", now_date)
             nc.setncattr('cdm_data_type', 'Station')
 
             old_history = getattr(nc, 'history', '')
@@ -138,6 +142,7 @@ class TimeSeries(object):
             lat[:] = latitude
             nc.setncattr("geospatial_lat_min", latitude)
             nc.setncattr("geospatial_lat_max", latitude)
+            nc.setncattr("geospatial_lat_resolution", 0)
             nc.setncattr("geospatial_lat_units", "degrees_north")
 
             lon = nc.createVariable("longitude", get_type(longitude))
@@ -147,7 +152,12 @@ class TimeSeries(object):
             lon[:] = longitude
             nc.setncattr("geospatial_lon_min", longitude)
             nc.setncattr("geospatial_lon_max", longitude)
+            nc.setncattr("geospatial_lon_resolution", 0)
             nc.setncattr("geospatial_lon_units", "degrees_east")
+
+            nc.setncattr("geospatial_bounds", "POINT({} {})".format(longitude, latitude))
+            if "geospatial_bounds_crs" not in nc:
+                nc.setncattr("geospatial_bounds_crs", "4326")
 
             # Metadata variables
             self.crs = nc.createVariable("crs", "i4")
