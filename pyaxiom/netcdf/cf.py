@@ -161,8 +161,7 @@ class CFDataset(EnhancedDataset):
             for k in var.ncattrs():
                 z = var.getncattr(k)
                 try:
-                    isnan = np.isnan(z)
-                    assert isnan is False
+                    assert not np.isnan(z)
                 except AssertionError:
                     js[varname][k] = None
                 except TypeError:
