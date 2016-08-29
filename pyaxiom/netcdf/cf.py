@@ -10,7 +10,7 @@ from pyaxiom.netcdf import EnhancedDataset
 from pyaxiom.utils import all_subclasses
 
 from pyaxiom import logger
-from pyaxiom.utils import NumpyEncoder
+from pyaxiom.utils import BasicNumpyEncoder
 
 
 class CFDataset(EnhancedDataset):
@@ -173,4 +173,4 @@ class CFDataset(EnhancedDataset):
                 except BaseException:
                     logger.exception("Could not apply custom variable attribue function")
 
-        return json.loads(json.dumps(js, cls=NumpyEncoder))
+        return json.loads(json.dumps(js, cls=BasicNumpyEncoder))
