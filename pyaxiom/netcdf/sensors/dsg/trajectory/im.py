@@ -40,16 +40,13 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
 
             # Allow for string variables
             tvar = tvars[0]
-            minimum_dimensions = 0
-            maximum_dimensions = 1
-            if np.issubdtype(tvar.dtype, 'S'):
-                minimum_dimensions += 1
-                maximum_dimensions += 1
-            assert minimum_dimensions <= len(tvar.dimensions) <= maximum_dimensions
+            # 0 = single
+            # 1 = array of strings/ints/bytes/etc
+            # 2 = array of character arrays
+            assert 0 <= len(tvar.dimensions) <= 2
 
-            is_single_trajectory = False
-            if len(tvar.dimensions) == minimum_dimensions:
-                is_single_trajectory = True
+            ts = normalize_array(tvar)
+            is_single = ts.size == 1
 
             t = dsg.t_axes()[0]
             x = dsg.x_axes()[0]
@@ -59,7 +56,7 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
             assert t.dimensions == x.dimensions == y.dimensions == z.dimensions
             assert t.size == x.size == y.size == z.size
 
-            if is_single_trajectory:
+            if is_single:
                 assert len(t.dimensions) == 1
                 time_dim = dsg.dimensions[t.dimensions[0]]
                 for dv in dsg.data_vars():

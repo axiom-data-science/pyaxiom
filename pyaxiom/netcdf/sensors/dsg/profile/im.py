@@ -41,14 +41,10 @@ class IncompleteMultidimensionalProfile(CFDataset):
 
             # Allow for string variables
             pvar = pvars[0]
-            # This diferentiates between this and an OrthogonalMultidimensionalProfile
-            # Incomplete files need to have a profile dimension (at least 1 dim).
-            minimum_dimensions = 1
-            maximum_dimensions = 2
-            if np.issubdtype(pvar.dtype, 'S'):
-                minimum_dimensions += 1
-                maximum_dimensions += 1
-            assert minimum_dimensions <= len(pvar.dimensions) <= maximum_dimensions
+            # 0 = single
+            # 1 = array of strings/ints/bytes/etc
+            # 2 = array of character arrays
+            assert 0 <= len(pvar.dimensions) <= 2
 
             t = dsg.t_axes()[0]
             x = dsg.x_axes()[0]

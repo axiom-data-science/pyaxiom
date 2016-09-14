@@ -8,6 +8,7 @@ import itertools
 import simplejson as json
 
 import numpy as np
+import netCDF4 as nc4
 
 from pyaxiom.urn import IoosUrn
 from pyaxiom import logger
@@ -50,11 +51,16 @@ def normalize_array(var):
     used to normalize string types between py2 and py3. It has no effect on types
     other than chars/strings
     """
-    if np.issubdtype(var.dtype, 'S'):
-        if len(var.dimensions) == 1:
-            return np.asarray([var[:].tostring().decode('utf-8')])
-        else:
-            return np.asarray([ s.tostring().decode('utf-8') for s in var[:] ])
+    if np.issubdtype(var.dtype, 'S1'):
+        if var.dtype == str:
+            # Python 2 on netCDF4 'string' variables needs this.
+            # Python 3 returns false for np.issubdtype(var.dtype, 'S1')
+            return var[:]
+
+        def decoder(x):
+            return str(x.decode('utf-8'))
+        vfunc = np.vectorize(decoder)
+        return vfunc(nc4.chartostring(var[:]))
     else:
         return var[:]
 

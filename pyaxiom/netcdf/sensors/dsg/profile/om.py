@@ -39,16 +39,13 @@ class OrthogonalMultidimensionalProfile(CFDataset):
 
             # Allow for string variables
             pvar = pvars[0]
-            minimum_dimensions = 0
-            maximum_dimensions = 1
-            if np.issubdtype(pvar.dtype, 'S'):
-                minimum_dimensions += 1
-                maximum_dimensions += 1
-            assert minimum_dimensions <= len(pvar.dimensions) <= maximum_dimensions
+            # 0 = single
+            # 1 = array of strings/ints/bytes/etc
+            # 2 = array of character arrays
+            assert 0 <= len(pvar.dimensions) <= 2
 
-            is_single_profile = False
-            if len(pvar.dimensions) == minimum_dimensions:
-                is_single_profile = True
+            ps = normalize_array(pvar)
+            is_single = ps.size == 1
 
             t = dsg.t_axes()[0]
             x = dsg.x_axes()[0]
@@ -57,7 +54,7 @@ class OrthogonalMultidimensionalProfile(CFDataset):
             assert len(z.dimensions) == 1
             z_dim = dsg.dimensions[z.dimensions[0]]
 
-            if is_single_profile:
+            if is_single:
                 assert t.size == 1
                 assert x.size == 1
                 assert y.size == 1
@@ -127,31 +124,17 @@ class OrthogonalMultidimensionalProfile(CFDataset):
         )
 
     def to_dataframe(self, clean_cols=True, clean_rows=True):
-        pvar = self.get_variables_by_attributes(cf_role='profile_id')[0]
-
-        minimum_dimensions = 0
-        if np.issubdtype(pvar.dtype, 'S'):
-            minimum_dimensions += 1
-        if len(pvar.dimensions) == minimum_dimensions:
-            # Single profile
-            ps = 1
-        else:
-            try:
-                # Multiple profiles in the file
-                ps = len(self.dimensions[pvar.dimensions[0]])
-            except IndexError:
-                # Single profile in the file
-                ps = 1
-        logger.debug(['# profiles: ', ps])
 
         zvar = self.z_axes()[0]
         zs = len(self.dimensions[zvar.dimensions[0]])
 
         # Profiles
+        pvar = self.get_variables_by_attributes(cf_role='profile_id')[0]
         try:
             p = normalize_array(pvar)
         except ValueError:
             p = np.asarray(list(range(len(pvar))), dtype=np.integer)
+        ps = p.size
         p = p.repeat(zs)
         logger.debug(['profile data size: ', p.size])
 

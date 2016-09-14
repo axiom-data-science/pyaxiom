@@ -54,7 +54,7 @@ class TestOrthogonalMultidimensionalProfile(unittest.TestCase):
         assert np.isclose(m.profiles[37].y, 60.01)
 
     def test_json_attributes(self):
-        ds = os.path.join(os.path.dirname(__file__), 'resources', '1dy11.original.nc')
+        ds = os.path.join(os.path.dirname(__file__), 'resources', 'om-1dy11.nc')
         om = OrthogonalMultidimensionalProfile(ds)
         om.to_dataframe()
         om.json_attributes()

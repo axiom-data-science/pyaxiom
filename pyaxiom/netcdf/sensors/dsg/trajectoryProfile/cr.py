@@ -37,12 +37,10 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
 
             # Allow for string variables
             rvar = rvars[0]
-            minimum_dimensions = 0
-            maximum_dimensions = 1
-            if np.issubdtype(rvar.dtype, 'S'):
-                minimum_dimensions += 1
-                maximum_dimensions += 1
-            assert minimum_dimensions <= len(rvar.dimensions) <= maximum_dimensions
+            # 0 = single
+            # 1 = array of strings/ints/bytes/etc
+            # 2 = array of character arrays
+            assert 0 <= len(rvar.dimensions) <= 2
 
         except BaseException:
             return False
@@ -170,7 +168,7 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
 
         p = np.empty(0, dtype=profile_indexes.dtype)
         r = np.empty(0, dtype=traj_indexes.dtype)
-        t = np.empty(0, dtype=tvar.dtype) 
+        t = np.empty(0, dtype=tvar.dtype)
         x = np.empty(0, dtype=xvar.dtype)
         y = np.empty(0, dtype=yvar.dtype)
         for i in range(profile_indexes.size):
@@ -188,7 +186,7 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
         d = np.ma.fix_invalid(np.ma.MaskedArray(np.cumsum(d)).astype(np.float64).round(2))
 
         # Sample dimension
-        
+
         z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:].astype(np.float64)))
         z = z.flatten().round(5)
 

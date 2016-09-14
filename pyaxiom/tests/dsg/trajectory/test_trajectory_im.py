@@ -63,3 +63,7 @@ class TestIncompleteMultidimensionalTrajectory(unittest.TestCase):
         assert m.trajectories["Trajectory3"].max_t == dtparse('1990-01-02 12:00:00')
         assert m.trajectories["Trajectory3"].first_loc.x == -73.3026
         assert m.trajectories["Trajectory3"].first_loc.y == 1.95761
+
+    def test_json_attributes(self):
+        IncompleteMultidimensionalTrajectory(self.single).json_attributes()
+        IncompleteMultidimensionalTrajectory(self.multi).json_attributes()

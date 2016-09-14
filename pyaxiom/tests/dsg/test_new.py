@@ -16,6 +16,7 @@ logger.handlers = [logging.StreamHandler()]
 @pytest.mark.parametrize("klass,fp", [
     (OrthogonalMultidimensionalProfile,         os.path.join(os.path.dirname(__file__), 'profile', 'resources', 'om-single.nc')),
     (OrthogonalMultidimensionalProfile,         os.path.join(os.path.dirname(__file__), 'profile', 'resources', 'om-multiple.nc')),
+    (OrthogonalMultidimensionalProfile,         os.path.join(os.path.dirname(__file__), 'profile', 'resources', 'om-1dy11.nc')),
     (IncompleteMultidimensionalProfile,         os.path.join(os.path.dirname(__file__), 'profile', 'resources', 'im-multiple.nc')),
     (IncompleteMultidimensionalTrajectory,      os.path.join(os.path.dirname(__file__), 'trajectory', 'resources', 'im-single.nc')),
     (IncompleteMultidimensionalTrajectory,      os.path.join(os.path.dirname(__file__), 'trajectory', 'resources', 'im-multiple.nc')),
