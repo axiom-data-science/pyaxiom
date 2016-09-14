@@ -50,7 +50,10 @@ class EnhancedDataset(Dataset):
         return vs
 
     def __del__(self):
-        self.close()
+        try:
+            self.close()
+        except RuntimeError:
+            pass
 
     def close(self):
         if not self.isopen():
