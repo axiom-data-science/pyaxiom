@@ -59,7 +59,6 @@ class EnhancedDataset(Dataset):
         if not self.isopen():
             return
 
-        self.sync()
         super(EnhancedDataset, self).close()
 
 
