@@ -43,7 +43,7 @@ install:
 script:
   - py.test -s -rxs -v
   - conda install -n root conda-build anaconda-client
-  - conda build conda-recipe
+  - conda build conda-recipe --python $TRAVIS_PYTHON_VERSION
   - conda install pyaxiom --use-local
 
 after_success:
