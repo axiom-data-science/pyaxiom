@@ -2,18 +2,23 @@ from __future__ import with_statement
 
 from setuptools import setup, find_packages
 
-from pyaxiom import __version__
+
+def version():
+    with open('VERSION') as f:
+        return f.read().strip()
 
 
 def readme():
     with open('README.md') as f:
         return f.read()
 
+
 reqs = [line.strip() for line in open('requirements.txt') if not line.startswith('#')]
+
 
 setup(
     name                = "pyaxiom",
-    version             = __version__,
+    version             = version(),
     description         = "An ocean data toolkit developed and used by Axiom Data Science",
     long_description    = readme(),
     license             = 'MIT',
