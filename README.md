@@ -7,11 +7,15 @@ An ocean data toolkit developed and used by [Axiom Data Science](http://axiomdat
 
 ##### Stable
 
-    pip install pyaxiom
+```
+$ conda install -c conda-forge pyaxiom
+```
 
 ##### Development
 
-    pip install git+https://github.com/axiom-data-science/pyaxiom.git
+```
+$ conda install -c axiom-data-science pyaxiom
+```
 
 
 ### Enhanced `netcdf4-python` Dataset object
