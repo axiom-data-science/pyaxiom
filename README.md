@@ -1,18 +1,19 @@
-# pyaxiom  [![Build Status](https://travis-ci.org/axiom-data-science/pyaxiom.svg)](https://travis-ci.org/axiom-data-science/pyaxiom)
+# pyaxiom [![Build Status](https://travis-ci.org/axiom-data-science/pyaxiom.svg)](https://travis-ci.org/axiom-data-science/pyaxiom) [![Anaconda-Server Badge](https://anaconda.org/axiom-data-science/pyaxiom/badges/license.svg)](https://anaconda.org/axiom-data-science/pyaxiom)
+
 
 An ocean data toolkit developed and used by [Axiom Data Science](http://axiomdatascience.com)
 
 
 ## Installation
 
-##### Stable
-
+#### Stable
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyaxiom/badges/version.svg)](https://anaconda.org/conda-forge/pyaxiom) [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyaxiom/badges/downloads.svg)](https://anaconda.org/conda-forge/pyaxiom)
 ```
 $ conda install -c conda-forge pyaxiom
 ```
 
-##### Development
-
+#### Development
+[![Anaconda-Server Badge](https://anaconda.org/axiom-data-science/pyaxiom/badges/version.svg)](https://anaconda.org/axiom-data-science/pyaxiom) [![Anaconda-Server Badge](https://anaconda.org/axiom-data-science/pyaxiom/badges/downloads.svg)](https://anaconda.org/axiom-data-science/pyaxiom)
 ```
 $ conda install -c axiom-data-science pyaxiom
 ```
