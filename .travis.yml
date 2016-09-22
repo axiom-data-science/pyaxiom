@@ -6,7 +6,7 @@ python:
 
 sudo: false
 
-before_install:
+install:
   # Install miniconda
   # -----------------
   - export CONDA_BASE=http://repo.continuum.io/miniconda/Miniconda
@@ -35,12 +35,25 @@ before_install:
   - conda create --quiet -n $ENV_NAME python=$TRAVIS_PYTHON_VERSION
   - source activate $ENV_NAME
 
-install:
-  # Customise the testing environment
-  # ---------------------------------
-  - conda install pytest
-  - conda install --file requirements.txt
-  - conda install pyncml pynco
+  # Install testing requirements
+  # ------------------------------------
+  - conda install --file requirements.txt pytest pyncml pynco
   - conda list --export
 
-script: py.test -v
+script:
+  - py.test -s -rxs -v
+  - conda install -n root conda-build anaconda-client
+  - conda build conda-recipe
+  - conda install pyaxiom --use-local
+
+after_success:
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" != "" ]; then
+    anaconda -t $ANACONDA_TOKEN upload --force -u axiom-data-science $HOME/miniconda/**/pyaxiom-*.tar.bz2;
+    fi
+
+deploy:
+  provider: releases
+  api_key:
+    secure: OLs7/pH/mPMnLeJqWV94hrPAW7gGJLvm0Y2N+vIhC+bxYxOxe93T6D8/zF/i4ppviDKqqTL6UKeE2B0FeKBp6iao1BKcbTgK7Kwxb01bRrdRHKmkwLGLZ/VZvT5EdiAhjU0a7POMVyFTAs16IOlAmNdMgiaPeQSD9Da2EsqgyoM=
+  on:
+    tags: true
