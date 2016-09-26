@@ -322,6 +322,7 @@ class TimeSeries(object):
                     for (tzi, zzi, vz) in indexed:
                         if zzi < vertical_axis.size and tzi < self.time.size:
                             used_values[tzi, zzi] = vz
+                    del indexed
                 else:
                     raise ValueError("You need to pass in both 'times' and 'verticals' parameters that matches the size of the 'values' parameter.")
             else:
@@ -333,6 +334,7 @@ class TimeSeries(object):
                     for (tzi, vz) in indexed:
                         if tzi < self.time.size:
                             used_values[tzi] = vz
+                    del indexed
                 else:
                     raise ValueError("You need to pass in a 'times' parameter that matches the size of the 'values' parameter.")
 
@@ -394,6 +396,7 @@ class TimeSeries(object):
             self.add_instrument_variable(variable_name)
 
         self._nc.sync()
+        del used_values
         return var
 
     def add_variable_object(self, varobject, dimension_map=None, reduce_dims=None):
