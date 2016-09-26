@@ -1,9 +1,14 @@
+#!python
+# coding=utf-8
+
 import os
+import shutil
 import unittest
 from copy import copy
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 import numpy as np
+import pandas as pd
 import netCDF4
 
 from pyaxiom.netcdf import EnhancedDataset
@@ -15,6 +20,7 @@ from pyaxiom.utils import urnify
 logger.level = logging.INFO
 logger.handlers = [logging.StreamHandler()]
 
+
 class TestTimeSeries(unittest.TestCase):
 
     def setUp(self):
@@ -22,7 +28,7 @@ class TestTimeSeries(unittest.TestCase):
         self.latitude = 34
         self.longitude = -72
         self.station_name = "PytoolsTestStation"
-        self.global_attributes = dict(id='this.is.the.id')
+        self.global_attributes = dict(id='this.is.the.id', naming_authority='my.authority')
         self.fillvalue = -9999.9
 
     def test_timeseries(self):
@@ -59,6 +65,53 @@ class TestTimeSeries(unittest.TestCase):
             nc.geospatial_vertical_min
         with self.assertRaises(AttributeError):
             nc.geospatial_vertical_max
+
+        assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
+        assert nc.variables.get('temperature').size == len(times)
+        assert (nc.variables.get('temperature')[:] == np.asarray(values)).all()
+
+    def test_timeseries_from_dataframe(self):
+        filename = 'test_timeseries_from_dataframe.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = 0
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='sea_water_temperature')
+
+        # From dataframe
+        df = pd.DataFrame({
+            'depth': verticals,
+            'time': [ datetime.utcfromtimestamp(x) for x in times ],
+            'value': values
+        })
+        logger.info(df)
+        ts = TimeSeries.from_dataframe(
+            df,
+            output_directory=self.output_directory,
+            output_filename=filename,
+            latitude=self.latitude,
+            longitude=self.longitude,
+            station_name=self.station_name,
+            global_attributes=self.global_attributes,
+            variable_name='temperature',
+            variable_attributes=attrs,
+            attempts=4
+        )
+        ts.add_instrument_variable('temperature')
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+
+        # Basic metadata on all timeseries
+        self.assertEqual(nc.cdm_data_type, 'Station')
+        self.assertEqual(nc.geospatial_lat_units, 'degrees_north')
+        self.assertEqual(nc.geospatial_lon_units, 'degrees_east')
+        self.assertEqual(nc.geospatial_vertical_units, 'meters')
+        self.assertEqual(nc.geospatial_vertical_positive, 'down')
+        self.assertEqual(nc.featureType, 'timeSeries')
+        self.assertEqual(nc.geospatial_vertical_resolution, '0')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 0)
 
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('time')[:].dtype == np.int32
@@ -142,6 +195,55 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('z')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times) * len(verticals)
         assert (nc.variables.get('temperature')[:] == values.reshape((len(times), len(verticals)))).all()
+
+    def test_timeseries_profile_from_dataframe(self):
+        filename = 'test_timeseries_profile_from_dataframe.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = [0, 1, 2]
+        values = [20, 21, 22]
+        attrs = dict(standard_name='sea_water_temperature')
+
+        # From dataframe
+        df = pd.DataFrame({
+            'depth': np.tile(verticals, 6),
+            'time': np.repeat([ datetime.utcfromtimestamp(x) for x in times ], 3),
+            'value': np.tile(values, 6)
+        })
+        ts = TimeSeries.from_dataframe(
+            df,
+            output_directory=self.output_directory,
+            output_filename=filename,
+            latitude=self.latitude,
+            longitude=self.longitude,
+            station_name=self.station_name,
+            global_attributes=self.global_attributes,
+            variable_name='temperature',
+            variable_attributes=attrs,
+            attempts=4
+        )
+        ts.add_instrument_variable('temperature')
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+
+        # Basic metadata on all timeseries
+        self.assertEqual(nc.cdm_data_type, 'Station')
+        self.assertEqual(nc.geospatial_lat_units, 'degrees_north')
+        self.assertEqual(nc.geospatial_lon_units, 'degrees_east')
+        self.assertEqual(nc.geospatial_vertical_units, 'meters')
+        self.assertEqual(nc.geospatial_vertical_positive, 'down')
+        self.assertEqual(nc.featureType, 'timeSeriesProfile')
+        self.assertEqual(nc.geospatial_vertical_resolution, '1 1')
+        self.assertEqual(nc.geospatial_vertical_min, 0)
+        self.assertEqual(nc.geospatial_vertical_max, 2)
+
+        assert nc.variables.get('time').size == len(times)
+        assert nc.variables.get('time')[:].dtype == np.int32
+        assert nc.variables.get('z').size == len(verticals)
+        assert nc.variables.get('z').positive == 'down'
+        assert nc.variables.get('z')[:].dtype == np.int32
+        assert nc.variables.get('temperature').size == len(times) * len(verticals)
+        assert (nc.variables.get('temperature')[:] == np.tile(values, 6).reshape(6, 3)).all()
 
     def test_timeseries_profile_different_z_name(self):
         filename = 'test_timeseries_profile_different_z_name.nc'
@@ -772,3 +874,135 @@ class TestDataFrameFromVariable(unittest.TestCase):
         df1 = get_dataframe_from_variable(ncd1, ncvar1)
 
         assert np.allclose(df1.depth.unique(), np.asarray([-0.0508, -0.2032, -0.508]))
+
+
+class TestFromDataframeAttempts(unittest.TestCase):
+
+    def setUp(self):
+        self.output_directory = os.path.join(os.path.dirname(__file__), "output", 'attempts')
+        self.latitude = 34
+        self.longitude = -72
+        self.station_name = "PytoolsTestStation"
+        self.global_attributes = dict(id='this.is.the.id')
+        self.fillvalue = -9999.9
+        self.vatts = dict(standard_name='sea_water_temperature')
+        self.vname = 'temperature'
+        times = [0, 1000, 2000, 3000, 4000, 5000, 6000, 2000]
+        verticals = [None, 1, 2, 3, None, 4, 5, 6]
+        values = [20, 21, 22, 23, 24, 25, 0, 9]
+        self.df = pd.DataFrame({
+            'depth': verticals,
+            'time': [ datetime.utcfromtimestamp(x) for x in times ],
+            'value': values
+        })
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(self.output_directory)
+        except FileNotFoundError:
+            pass
+
+    def test_attempts_1(self):
+        filename = 'test_attempts_1.nc'
+
+        # From dataframe
+        with self.assertRaises(ValueError):
+            TimeSeries.from_dataframe(
+                self.df,
+                output_directory=self.output_directory,
+                output_filename=filename,
+                latitude=self.latitude,
+                longitude=self.longitude,
+                station_name=self.station_name,
+                global_attributes=self.global_attributes,
+                variable_name=self.vname,
+                variable_attributes=self.vatts,
+                attempts=1
+            )
+
+    def test_attempts_2(self):
+        filename = 'test_attempts_2.nc'
+
+        # From dataframe
+        with self.assertRaises(ValueError):
+            TimeSeries.from_dataframe(
+                self.df,
+                output_directory=self.output_directory,
+                output_filename=filename,
+                latitude=self.latitude,
+                longitude=self.longitude,
+                station_name=self.station_name,
+                global_attributes=self.global_attributes,
+                variable_name=self.vname,
+                variable_attributes=self.vatts,
+                attempts=2
+            )
+
+    def test_attempts_3(self):
+        filename = 'test_attempts_3.nc'
+
+        # From dataframe
+        with self.assertRaises(ValueError):
+            TimeSeries.from_dataframe(
+                self.df,
+                output_directory=self.output_directory,
+                output_filename=filename,
+                latitude=self.latitude,
+                longitude=self.longitude,
+                station_name=self.station_name,
+                global_attributes=self.global_attributes,
+                variable_name=self.vname,
+                variable_attributes=self.vatts,
+                attempts=3
+            )
+
+    def test_attempts_4(self):
+        filename = 'test_attempts_4.nc'
+
+        # From dataframe
+        with self.assertRaises(ValueError):
+            TimeSeries.from_dataframe(
+                self.df,
+                output_directory=self.output_directory,
+                output_filename=filename,
+                latitude=self.latitude,
+                longitude=self.longitude,
+                station_name=self.station_name,
+                global_attributes=self.global_attributes,
+                variable_name=self.vname,
+                variable_attributes=self.vatts,
+                attempts=4
+            )
+
+    def test_attempts_5(self):
+        filename = 'test_attempts_5.nc'
+
+        # From dataframe
+        TimeSeries.from_dataframe(
+            self.df,
+            output_directory=self.output_directory,
+            output_filename=filename,
+            latitude=self.latitude,
+            longitude=self.longitude,
+            station_name=self.station_name,
+            global_attributes=self.global_attributes,
+            variable_name=self.vname,
+            variable_attributes=self.vatts,
+            attempts=5
+        )
+
+    def test_attempts_empty(self):
+        filename = 'test_attempts_empty.nc'
+
+        # From dataframe
+        TimeSeries.from_dataframe(
+            self.df,
+            output_directory=self.output_directory,
+            output_filename=filename,
+            latitude=self.latitude,
+            longitude=self.longitude,
+            station_name=self.station_name,
+            global_attributes=self.global_attributes,
+            variable_name=self.vname,
+            variable_attributes=self.vatts
+        )
