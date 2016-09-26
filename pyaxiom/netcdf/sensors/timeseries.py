@@ -611,8 +611,10 @@ def get_dataframe_from_variable(nc, data_var):
 
     # https://github.com/numpy/numpy/issues/4595
     # We can't call astype on a MaskedConstant
-    if (isinstance(depths, np.ma.core.MaskedConstant) or
-       (hasattr(depths, 'mask') and depths.mask.all())):
+    if (
+        isinstance(depths, np.ma.core.MaskedConstant) or
+        (hasattr(depths, 'mask') and depths.mask.all())
+    ):
         depths = np.asarray([np.nan] * len(times)).flatten()
 
     df = pd.DataFrame({ 'time':   times,
