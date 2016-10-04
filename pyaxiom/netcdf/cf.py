@@ -1,16 +1,12 @@
 #!python
 # coding=utf-8
 import os
-import simplejson as json
 from datetime import datetime
 
-import numpy as np
-
-from pyaxiom.netcdf import EnhancedDataset
 from pyaxiom.utils import all_subclasses
+from pyaxiom.netcdf import EnhancedDataset
 
 from pyaxiom import logger
-from pyaxiom.utils import BasicNumpyEncoder
 
 
 class CFDataset(EnhancedDataset):
@@ -22,15 +18,21 @@ class CFDataset(EnhancedDataset):
     def load(cls, path):
 
         fpath = os.path.realpath(path)
-        dsg = CFDataset(fpath)
+        subs = list(all_subclasses(cls))
+        dsg = cls(fpath)
 
-        subs = all_subclasses(cls)
-        for klass in subs:
-            logger.info('Trying {}...'.format(klass.__name__))
-            if getattr(klass, 'is_mine', False) is True:
-                return object.__new__(klass, dsg)
-        else:
-            raise ValueError('Could not open {} as any type of CF Dataset. Tried: {}.'.format(fpath, list(subs)))
+        try:
+            for klass in subs:
+                logger.debug('Trying {}...'.format(klass.__name__))
+                if hasattr(klass, 'is_mine'):
+                    if klass.is_mine(dsg):
+                        dsg.close()
+                        return klass(path)
+        finally:
+            dsg.close()
+
+        subnames = ', '.join([ s.__name__ for s in subs ])
+        raise ValueError('Could not open {} as any type of CF Dataset. Tried: {}.'.format(fpath, subnames))
 
     def axes(self, name):
         return getattr(self, '{}_axes'.format(name.lower()))()
@@ -86,23 +88,6 @@ class CFDataset(EnhancedDataset):
                     ancillary_variables.append(self.variables[av])
         return list(set(ancillary_variables))
 
-    def update_attributes(self, attributes):
-
-        for k, v in attributes.pop('global', {}).items():
-            try:
-                self.setncattr(k, v)
-            except BaseException:
-                logger.warning('Could not set attribute {}: {}'.format(k, v))
-
-        for k, v in attributes.items():
-            if k in self.variables:
-                for n, z in v.items():
-                    try:
-                        self.variables[k].setncattr(n, z)
-                    except BaseException:
-                        logger.warning('Could not set attribute {} on {}'.format(n, k))
-        self.sync()
-
     def nc_attributes(self):
         return {
             'global' : {
@@ -141,37 +126,3 @@ class CFDataset(EnhancedDataset):
                 'inverse_flattening' : float(298.257223563)
             }
         }
-
-    def json_attributes(self, vfuncs=None):
-        """
-        vfuncs can be any callable that accepts a single argument, the
-        Variable object, and returns a dictionary of new attributes to
-        set. These will overwrite existing attributes
-        """
-
-        vfuncs = vfuncs or []
-
-        js = {'global': {}}
-
-        for k in self.ncattrs():
-            js['global'][k] = self.getncattr(k)
-
-        for varname, var in self.variables.items():
-            js[varname] = {}
-            for k in var.ncattrs():
-                z = var.getncattr(k)
-                try:
-                    assert not np.isnan(z).all()
-                    js[varname][k] = z
-                except AssertionError:
-                    js[varname][k] = None
-                except TypeError:
-                    js[varname][k] = z
-
-            for vf in vfuncs:
-                try:
-                    js[varname].update(vfuncs(var))
-                except BaseException:
-                    logger.exception("Could not apply custom variable attribue function")
-
-        return json.loads(json.dumps(js, cls=BasicNumpyEncoder))

@@ -27,11 +27,15 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
             assert len(dsg.y_axes()) >= 1
             assert len(dsg.z_axes()) >= 1
 
-            r_index_vars = dsg.get_variables_by_attributes(instance_dimension=lambda x: x is not None)
+            r_index_vars = dsg.get_variables_by_attributes(
+                instance_dimension=lambda x: x is not None
+            )
             assert len(r_index_vars) == 1
             assert r_index_vars[0].instance_dimension in dsg.dimensions  # Trajectory dimension
 
-            o_index_vars = dsg.get_variables_by_attributes(sample_dimension=lambda x: x is not None)
+            o_index_vars = dsg.get_variables_by_attributes(
+                sample_dimension=lambda x: x is not None
+            )
             assert len(o_index_vars) == 1
             assert o_index_vars[0].sample_dimension in dsg.dimensions  # Sample dimension
 
