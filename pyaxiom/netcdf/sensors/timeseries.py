@@ -117,7 +117,7 @@ class TimeSeries(object):
                             "featureType", "geospatial_vertical_positive", "geospatial_vertical_min", "geospatial_vertical_max",
                             "geospatial_lat_min", "geospatial_lon_min", "geospatial_lat_max", "geospatial_lon_max", "geospatial_bounds"
                             "geospatial_vertical_resolution", "geospatial_lat_resolution", "geospatial_lon_resolution",
-                            "Conventions", "Metadata_Conventions", "date_created", "date_modified", "date_issued"]
+                            "Conventions", "date_created", "date_modified", "date_issued"]
             for k, v in global_attributes.items():
                 if v is None:
                     v = "None"
@@ -126,7 +126,6 @@ class TimeSeries(object):
 
             now_date = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:00Z")
             nc.setncattr("Conventions", "CF-1.6,ACDD-1.3")
-            nc.setncattr("Metadata_Conventions", "Unidata Dataset Discovery v1.0")
             nc.setncattr("date_created", now_date)
             nc.setncattr("date_modified", now_date)
             nc.setncattr("date_issued", now_date)
@@ -153,6 +152,9 @@ class TimeSeries(object):
             lat.units           = "degrees_north"
             lat.standard_name   = "latitude"
             lat.long_name       = "sensor latitude"
+            lat.axis            = "Y"
+            lat.valid_min       = latitude
+            lat.valid_max       = latitude
             lat[:] = latitude
             nc.setncattr("geospatial_lat_min", latitude)
             nc.setncattr("geospatial_lat_max", latitude)
@@ -163,6 +165,9 @@ class TimeSeries(object):
             lon.units           = "degrees_east"
             lon.standard_name   = "longitude"
             lon.long_name       = "sensor longitude"
+            lon.axis            = "X"
+            lon.valid_min       = longitude
+            lon.valid_max       = longitude
             lon[:] = longitude
             nc.setncattr("geospatial_lon_min", longitude)
             nc.setncattr("geospatial_lon_max", longitude)
@@ -182,17 +187,16 @@ class TimeSeries(object):
             self.crs.inverse_flattening  = float(298.257223563)
 
             platform = nc.createVariable("platform", "i4")
-            nc.setncattr('platform', 'platform')
             platform.definition = "http://mmisw.org/ont/ioos/definition/stationID"
 
             urn = IoosUrn.from_string(station_name)
             if urn.valid() is True:
-                platform.short_name = urn.label
-                platform.long_name = urn.urn
+                platform.short_name = global_attributes.get("title", urn.label)
+                platform.long_name = global_attributes.get('summary', 'Station {}'.format(platform_title))
                 platform.ioos_code = urn.urn
             else:
                 platform.short_name = global_attributes.get("title", station_name)
-                platform.long_name = global_attributes.get("description", station_name)
+                platform.long_name = global_attributes.get("summary", station_name)
                 platform.ioos_code = station_name
 
             if vertical_fill is None:
@@ -216,7 +220,7 @@ class TimeSeries(object):
             logger.error("Variable {} not found in file, cannot create instrument metadata variable")
             return
         elif 'id' not in self._nc.ncattrs() or 'naming_authority' not in self._nc.ncattrs():
-            logger.error("Global attributes 'id' and 'naming_authority' are required to create an instrumnet variable")
+            logger.error("Global attributes 'id' and 'naming_authority' are required to create an instrument variable")
             return
 
         instr_var_name = "{}_instrument".format(variable_name)
@@ -226,12 +230,19 @@ class TimeSeries(object):
         vats = { k: getattr(datavar, k) for k in datavar.ncattrs() }
         instrument_urn = urnify(self._nc.naming_authority, self._nc.id, vats)
 
-        instrument.long_name = instrument_urn
+        inst_urn = IoosUrn.from_string(instrument_urn)
+        instrument.long_name = 'Instrument measuring {} from {}'.format(inst_urn.component, inst_urn.label)
         instrument.ioos_code = instrument_urn
-        instrument.short_name = IoosUrn.from_string(instrument_urn).component
+        instrument.short_name = inst_urn.component
         instrument.definition = "http://mmisw.org/ont/ioos/definition/sensorID"
 
         datavar.instrument = instr_var_name
+
+        # Append the instrument to the ancilary variables
+        av = getattr(datavar, 'ancillary_variables', '')
+        av += ' instrument'
+        datavar.ancillary_variables = av.strip()
+
         self._nc.sync()
 
     def add_time_bounds(self, delta=None, position=None):
@@ -341,6 +352,7 @@ class TimeSeries(object):
         logger.info("Setting values for {}...".format(variable_name))
         if len(used_values.shape) == 1:
             var = self._nc.createVariable(variable_name, get_type(used_values), ("time",), fill_value=fillvalue, chunksizes=(self.time_chunk,), zlib=True)
+            var.ncei_template_version = 'NCEI_NetCDF_TimeSeries_Orthogonal_Template_v2.0'
             if vertical_axis.size == 1:
                 var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
             else:
@@ -367,8 +379,13 @@ class TimeSeries(object):
         elif len(used_values.shape) == 2:
             var = self._nc.createVariable(variable_name, get_type(used_values), ("time", "z",), fill_value=fillvalue, chunksizes=(self.time_chunk, vertical_axis.size,), zlib=True)
             var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
+            var.ncei_template_version = 'NCEI_NetCDF_TimeSeriesProfile_Orthogonal_Template_v2.0'
         else:
             raise ValueError("Could not create variable.  Shape of data is {!s}.  Expected a dimension of 1 or 2, not {!s}.".format(used_values.shape, len(used_values.shape)))
+
+        # Set missing_value as well
+        attributes = attributes or {}
+        attributes['missing_value'] = fillvalue
         # Set the variable attributes as passed in
         if attributes:
             for k, v in attributes.items():
@@ -390,6 +407,8 @@ class TimeSeries(object):
 
         var.grid_mapping = 'crs'
         var.platform = 'platform'
+        var.ancillary_variables = 'platform'
+        var.coverage_content_type = 'physicalMeasurement'
         var[:] = used_values
 
         if create_instrument_variable is True:
@@ -511,6 +530,7 @@ class TimeSeries(object):
         self.time.standard_name  = "time"
         self.time.long_name      = "time of measurement"
         self.time.calendar       = "gregorian"
+        self.time.axis           = "T"
         self.time[:] = full_times
 
         logger.debug("Setting up {}...".format(self.vertical_axis_name))
@@ -522,11 +542,15 @@ class TimeSeries(object):
             self._nc.setncattr("featureType", "timeSeries")
             # Fill in variable if we have an actual height. Else, the fillvalue remains.
             self._nc.setncattr("geospatial_vertical_resolution", '0')
+
+            self.z = self._nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), fill_value=self.vertical_fill)
+
             if unique_verticals.size == 1 and not np.isnan(unique_verticals[0]) and unique_verticals[0] != self.vertical_fill:
                 # Vertical extents
                 self._nc.setncattr("geospatial_vertical_min",      unique_verticals[0])
                 self._nc.setncattr("geospatial_vertical_max",      unique_verticals[0])
-            self.z = self._nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), fill_value=self.vertical_fill)
+                self.z.valid_min = unique_verticals[0]
+                self.z.valid_max = unique_verticals[0]
 
         elif unique_verticals.size > 1:
             # TIMESERIES PROFILE
@@ -545,6 +569,8 @@ class TimeSeries(object):
             # There is more than one vertical value for this variable, we need to create a vertical dimension
             self._nc.createDimension("z", unique_verticals.size)
             self.z = self._nc.createVariable(self.vertical_axis_name, get_type(unique_verticals), ("z", ), fill_value=self.vertical_fill)
+            self.z.valid_min = minvertical
+            self.z.valid_max = maxvertical
 
         self.z.grid_mapping  = 'crs'
         self.z.long_name     = "{} of the sensor relative to the water surface".format(self.vertical_axis_name)

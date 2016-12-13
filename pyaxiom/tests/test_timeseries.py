@@ -683,7 +683,6 @@ class TestTimeSeries(unittest.TestCase):
 
         instvar = nc.variables[instrument_var_name]
         assert instvar.short_name == 'sea_water_temperature'
-        assert instvar.long_name == urnify(gats['naming_authority'], gats['id'], attrs)
         assert instvar.ioos_code == urnify(gats['naming_authority'], gats['id'], attrs)
 
     def test_history_empty(self):
