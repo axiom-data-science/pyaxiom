@@ -22,9 +22,11 @@ requirements:
         - python-dateutil
         - netcdf4
         - pandas
+        - pygc
         - pyncml
         - pynco  # [not win]
         - simplejson
+        - shapely
 
 test:
     imports:
