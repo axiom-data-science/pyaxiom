@@ -192,7 +192,7 @@ class TimeSeries(object):
             urn = IoosUrn.from_string(station_name)
             if urn.valid() is True:
                 platform.short_name = global_attributes.get("title", urn.label)
-                platform.long_name = global_attributes.get('summary', 'Station {}'.format(platform_title))
+                platform.long_name = global_attributes.get('summary', 'Station {}'.format(urn.label))
                 platform.ioos_code = urn.urn
             else:
                 platform.short_name = global_attributes.get("title", station_name)
