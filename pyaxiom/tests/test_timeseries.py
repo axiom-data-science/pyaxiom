@@ -770,6 +770,62 @@ class TestTimeSeries(unittest.TestCase):
         assert history[2] == 'some more'
         assert 'File created using pyaxiom' in history[3]
 
+    def test_station_name_as_urn(self):
+        filename = 'test_station_name_as_urn.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = None
+        gats = copy(self.global_attributes)
+
+        urn = 'urn:ioos:station:myauthority:mylabel'
+
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=urn,
+                        global_attributes=gats,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals)
+
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+        assert nc.variables['platform'].ioos_code == urn
+        assert nc.variables['platform'].short_name == 'mylabel'
+        assert nc.variables['platform'].long_name == 'Station mylabel'
+
+    def test_station_name_as_urn_override_with_globals(self):
+        filename = 'test_station_name_as_urn_override_with_globals.nc'
+        times = [0, 1000, 2000, 3000, 4000, 5000]
+        verticals = None
+        gats = copy(self.global_attributes)
+        gats['title'] = "My Title Override"
+        gats['summary'] = "My Summary Override"
+
+        urn = 'urn:ioos:station:myauthority:mylabel'
+
+        ts = TimeSeries(output_directory=self.output_directory,
+                        latitude=self.latitude,
+                        longitude=self.longitude,
+                        station_name=urn,
+                        global_attributes=gats,
+                        output_filename=filename,
+                        times=times,
+                        verticals=verticals)
+
+        values = [20, 21, 22, 23, 24, 25]
+        attrs = dict(standard_name='sea_water_temperature')
+        ts.add_variable('temperature', values=values, attributes=attrs)
+
+        nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
+        assert nc is not None
+        assert nc.variables['platform'].ioos_code == urn
+        assert nc.variables['platform'].short_name == gats['title']
+        assert nc.variables['platform'].long_name == gats['summary']
+
 
 class TestTimeseriesTimeBounds(unittest.TestCase):
 
