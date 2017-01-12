@@ -65,6 +65,18 @@ def normalize_array(var):
         return var[:]
 
 
+def pyscalar(val):
+    return np.asscalar(val)
+
+
+def get_fill_value(var):
+    if hasattr(var, 'missing_value'):
+        return var.missing_value
+    elif hasattr(var, '_FillValue'):
+        return var._FillValue
+    return None
+
+
 def get_dtype(obj):
     if hasattr(obj, 'dtype'):
         if obj.dtype == object:

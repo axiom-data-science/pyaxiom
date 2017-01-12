@@ -3,13 +3,14 @@
 from datetime import datetime
 from collections import namedtuple
 
+import pytz
 import numpy as np
 import pandas as pd
 import netCDF4 as nc4
 from pygc import great_distance
 from shapely.geometry import Point, LineString
 
-from pyaxiom.utils import unique_justseen, normalize_array
+from pyaxiom.utils import unique_justseen, normalize_array, get_fill_value, get_dtype
 from pyaxiom.netcdf import CFDataset
 from pyaxiom import logger
 
@@ -170,29 +171,42 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
         else:
             zvar = zvars[0]
 
-        p = np.empty(0, dtype=profile_indexes.dtype)
-        r = np.empty(0, dtype=traj_indexes.dtype)
-        t = np.empty(0, dtype=tvar.dtype)
-        x = np.empty(0, dtype=xvar.dtype)
-        y = np.empty(0, dtype=yvar.dtype)
-        for i in range(profile_indexes.size):
-            p = np.append(p, np.full(o_index_var[i], profile_indexes[i], p.dtype))
-            r = np.append(r, np.full(o_index_var[i], traj_indexes[r_index_var[i]], r.dtype))
-            t = np.append(t, np.full(o_index_var[i], tvar[i], tvar.dtype))
-            x = np.append(x, np.full(o_index_var[i], xvar[i], xvar.dtype))
-            y = np.append(y, np.full(o_index_var[i], yvar[i], yvar.dtype))
+        p = np.ma.masked_all(o_dim.size, dtype=profile_indexes.dtype)
+        r = np.ma.masked_all(o_dim.size, dtype=traj_indexes.dtype)
+        t = np.ma.masked_all(o_dim.size, dtype=tvar.dtype)
+        x = np.ma.masked_all(o_dim.size, dtype=xvar.dtype)
+        y = np.ma.masked_all(o_dim.size, dtype=yvar.dtype)
+        si = 0
 
-        # Convert to datetime objects
-        t = nc4.num2date(t, units=tvar.units, calendar=getattr(tvar, 'calendar', 'standard'))
+        for i in range(0, p_dim.size):
+            ei = si + o_index_var[i]
+            p[si:ei] = profile_indexes[i]
+            r[si:ei] = traj_indexes[r_index_var[i]]
+            t[si:ei] = tvar[i]
+            x[si:ei] = xvar[i]
+            y[si:ei] = yvar[i]
+            si = ei
+
+        t_mask = False
+        tfill = get_fill_value(tvar)
+        if tfill is not None:
+            t_mask = t.mask
+
+        t = np.ma.MaskedArray(
+            nc4.num2date(t, tvar.units, getattr(tvar, 'calendar', 'standard'))
+        )
+        # Patch the time variable back to its original mask, since num2date
+        # breaks any missing/fill values
+        t.mask = t_mask
 
         # Distance
         d = np.append([0], great_distance(start_latitude=y[0:-1], end_latitude=y[1:], start_longitude=x[0:-1], end_longitude=x[1:])['distance'])
         d = np.ma.fix_invalid(np.ma.MaskedArray(np.cumsum(d)).astype(np.float64).round(2))
 
         # Sample dimension
-
-        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:].astype(np.float64)))
-        z = z.flatten().round(5)
+        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:].round(5).flatten()))
+        x = np.ma.fix_invalid(np.ma.MaskedArray(x.round(5)))
+        y = np.ma.fix_invalid(np.ma.MaskedArray(y.round(5)))
 
         df_data = {
             't': t,
@@ -206,23 +220,26 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
 
         building_index_to_drop = np.ones(o_dim.size, dtype=bool)
         extract_vars = list(set(self.data_vars() + self.ancillary_vars()))
-        for i, x in enumerate(extract_vars):
+        for i, dvar in enumerate(extract_vars):
 
             # Profile dimensions
-            if x.dimensions == (p_dim.name,):
-                vdata = np.ma.empty(0, dtype=x.dtype)
-                for i in range(profile_indexes.size):
-                    vdata = np.ma.append(vdata, np.full(o_index_var[i], x[i], x.dtype))
+            if dvar.dimensions == (p_dim.name,):
+                vdata = np.ma.masked_all(o_dim.size, dtype=dvar.dtype)
+                si = 0
+                for i in range(0, p_dim.size):
+                    ei = si + o_index_var[i]
+                    vdata[si:ei] = dvar[i]
+                    si = ei
 
             # Sample dimensions
-            elif x.dimensions == (o_dim.name,):
-                vdata = np.ma.fix_invalid(np.ma.MaskedArray(x[:].astype(np.float64).round(3).flatten()))
+            elif dvar.dimensions == (o_dim.name,):
+                vdata = np.ma.fix_invalid(np.ma.MaskedArray(dvar[:].round(3).flatten()))
 
             else:
-                logger.warning("Skipping variable {}... it didn't seem like a data variable".format(x))
+                logger.warning("Skipping variable {}... it didn't seem like a data variable".format(dvar))
 
             building_index_to_drop = (building_index_to_drop == True) & (vdata.mask == True)  # noqa
-            df_data[x.name] = vdata
+            df_data[dvar.name] = vdata
 
         df = pd.DataFrame(df_data)
 

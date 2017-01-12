@@ -17,6 +17,7 @@ class TestContinousRaggedTrajectoryProfile(unittest.TestCase):
     def setUp(self):
         self.single = os.path.join(os.path.dirname(__file__), 'resources', 'cr-single.nc')
         self.multi = os.path.join(os.path.dirname(__file__), 'resources', 'cr-multiple.nc')
+        self.ioos_glider = os.path.join(os.path.dirname(__file__), 'resources', 'cr-missing-time.nc')
 
     def test_crtp_load(self):
         ContiguousRaggedTrajectoryProfile(self.single)
@@ -68,3 +69,18 @@ class TestContinousRaggedTrajectoryProfile(unittest.TestCase):
         assert traj4.profiles[19].t == dtparse('1990-01-02 14:00:00')
         assert traj4.profiles[19].x == -44
         assert traj4.profiles[19].y == 47
+
+    def test_missing_time_calculated_metadata(self):
+        s = ContiguousRaggedTrajectoryProfile(self.ioos_glider).calculated_metadata()
+        assert s.min_t == dtparse('2014-11-16 21:32:29.952500')
+        assert s.max_t == dtparse('2014-11-17 07:59:08.398500')
+        assert len(s.trajectories) == 1
+
+        traj = s.trajectories["UW157-20141116T211809"]
+        assert np.isclose(traj.min_z, 0.47928014)
+        assert np.isclose(traj.max_z, 529.68005)
+        assert traj.min_t == dtparse('2014-11-16 21:32:29.952500')
+        assert traj.max_t == dtparse('2014-11-17 07:59:08.398500')
+        assert np.isclose(traj.first_loc.x, -124.681526638573)
+        assert np.isclose(traj.first_loc.y,  43.5022166666667)
+        assert len(traj.profiles) == 13
