@@ -199,7 +199,7 @@ class IncompleteMultidimensionalProfile(CFDataset):
         logger.debug(['profile data size: ', p.size])
 
         # Z
-        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:].astype(np.float64)))
+        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:]))
         z = z.flatten().round(5)
         logger.debug(['z data size: ', z.size])
 
@@ -214,13 +214,13 @@ class IncompleteMultidimensionalProfile(CFDataset):
 
         # X
         xvar = self.x_axes()[0]
-        x = np.ma.fix_invalid(np.ma.MaskedArray(xvar[:].astype(np.float64)))
+        x = np.ma.fix_invalid(np.ma.MaskedArray(xvar[:]))
         x = x.repeat(zs).round(5)
         logger.debug(['x data size: ', x.size])
 
         # Y
         yvar = self.y_axes()[0]
-        y = np.ma.fix_invalid(np.ma.MaskedArray(yvar[:].astype(np.float64)))
+        y = np.ma.fix_invalid(np.ma.MaskedArray(yvar[:]))
         y = y.repeat(zs).round(5)
         logger.debug(['y data size: ', y.size])
 
@@ -240,10 +240,10 @@ class IncompleteMultidimensionalProfile(CFDataset):
 
         building_index_to_drop = np.ones(t.size, dtype=bool)
         extract_vars = list(set(self.data_vars() + self.ancillary_vars()))
-        for i, x in enumerate(extract_vars):
-            vdata = np.ma.fix_invalid(np.ma.MaskedArray(x[:].astype(np.float64).round(3).flatten()))
+        for i, dvar in enumerate(extract_vars):
+            vdata = np.ma.fix_invalid(np.ma.MaskedArray(dvar[:].round(3).flatten()))
             building_index_to_drop = (building_index_to_drop == True) & (vdata.mask == True)  # noqa
-            df_data[x.name] = vdata
+            df_data[dvar.name] = vdata
 
         df = pd.DataFrame(df_data)
 

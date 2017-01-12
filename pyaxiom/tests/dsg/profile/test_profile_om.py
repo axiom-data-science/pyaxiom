@@ -31,8 +31,8 @@ class TestOrthogonalMultidimensionalProfile(unittest.TestCase):
         s = OrthogonalMultidimensionalProfile(self.single).calculated_metadata()
         assert s.min_t == dtparse('2005-07-09 01:48:00')
         assert s.max_t == dtparse('2005-07-09 01:48:00')
-        assert s.profiles[1].min_z == 0.
-        assert s.profiles[1].max_z == 96.06
+        assert np.isclose(s.profiles[1].min_z, 0.)
+        assert np.isclose(s.profiles[1].max_z, 96.06)
         assert s.profiles[1].t == dtparse('2005-07-09 01:48:00')
         assert np.isclose(s.profiles[1].x, -149.3582)
         assert np.isclose(s.profiles[1].y, 60.0248)
@@ -41,14 +41,14 @@ class TestOrthogonalMultidimensionalProfile(unittest.TestCase):
         assert m.min_t == dtparse('2005-09-10 07:08:00')
         assert m.max_t == dtparse('2005-09-14 17:27:00')
         assert len(m.profiles.keys()) == 35
-        assert m.profiles[2].min_z == 0.
-        assert m.profiles[2].max_z == 499.69
+        assert np.isclose(m.profiles[2].min_z, 0.)
+        assert np.isclose(m.profiles[2].max_z, 499.69)
         assert m.profiles[2].t == dtparse('2005-09-10 07:08:00')
         assert np.isclose(m.profiles[2].x, -148.2182)
         assert np.isclose(m.profiles[2].y, 58.5395)
 
-        assert m.profiles[37].min_z == 0.
-        assert m.profiles[37].max_z == 292.01001
+        assert np.isclose(m.profiles[37].min_z, 0.)
+        assert np.isclose(m.profiles[37].max_z, 292.01001)
         assert m.profiles[37].t == dtparse('2005-09-14 17:27:00')
         assert np.isclose(m.profiles[37].x, -149.468)
         assert np.isclose(m.profiles[37].y, 60.01)

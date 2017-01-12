@@ -195,7 +195,7 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
     def to_dataframe(self, clean_cols=True, clean_rows=True):
         # Z
         zvar = self.z_axes()[0]
-        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:].astype(np.float64)))
+        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:]))
         z = z.flatten().round(5)
         logger.debug(['z data size: ', z.size])
 
@@ -210,12 +210,12 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
 
         # X
         xvar = self.x_axes()[0]
-        x = np.ma.fix_invalid(np.ma.MaskedArray(xvar[:].astype(np.float64))).flatten().round(5)
+        x = np.ma.fix_invalid(np.ma.MaskedArray(xvar[:])).flatten().round(5)
         logger.debug(['x data size: ', x.size])
 
         # Y
         yvar = self.y_axes()[0]
-        y = np.ma.fix_invalid(np.ma.MaskedArray(yvar[:].astype(np.float64))).flatten().round(5)
+        y = np.ma.fix_invalid(np.ma.MaskedArray(yvar[:])).flatten().round(5)
         logger.debug(['y data size: ', y.size])
 
         # Trajectories
@@ -250,10 +250,10 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
 
         building_index_to_drop = np.ones(t.size, dtype=bool)
         extract_vars = list(set(self.data_vars() + self.ancillary_vars()))
-        for i, x in enumerate(extract_vars):
-            vdata = np.ma.fix_invalid(np.ma.MaskedArray(x[:].astype(np.float64).round(3).flatten()))
+        for i, dvar in enumerate(extract_vars):
+            vdata = np.ma.fix_invalid(np.ma.MaskedArray(dvar[:].round(3).flatten()))
             building_index_to_drop = (building_index_to_drop == True) & (vdata.mask == True)  # noqa
-            df_data[x.name] = vdata
+            df_data[dvar.name] = vdata
 
         df = pd.DataFrame(df_data)
 
