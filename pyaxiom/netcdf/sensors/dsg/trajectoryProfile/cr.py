@@ -198,14 +198,17 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
         # breaks any missing/fill values
         t.mask = t_mask
 
+        # X and Y
+        x = np.ma.fix_invalid(np.ma.MaskedArray(x.round(5)))
+        y = np.ma.fix_invalid(np.ma.MaskedArray(y.round(5)))
+
         # Distance
-        d = np.append([0], great_distance(start_latitude=y[0:-1], end_latitude=y[1:], start_longitude=x[0:-1], end_longitude=x[1:])['distance'])
-        d = np.ma.fix_invalid(np.ma.MaskedArray(np.cumsum(d)).astype(np.float64).round(2))
+        d = np.ma.zeros(o_dim.size, dtype=np.float64)
+        d[1:] = great_distance(start_latitude=y[0:-1], end_latitude=y[1:], start_longitude=x[0:-1], end_longitude=x[1:])['distance']
+        d = np.ma.fix_invalid(np.ma.MaskedArray(np.cumsum(d)).round(2))
 
         # Sample dimension
         z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:].round(5).flatten()))
-        x = np.ma.fix_invalid(np.ma.MaskedArray(x.round(5)))
-        y = np.ma.fix_invalid(np.ma.MaskedArray(y.round(5)))
 
         df_data = {
             't': t,
