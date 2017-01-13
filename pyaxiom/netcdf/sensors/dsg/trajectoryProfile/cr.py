@@ -136,15 +136,14 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
             assert traj_indexes.size == r_dim.size
         except BaseException:
             logger.warning('Could not pull trajectory values a variable with "cf_role=trajectory_id", using a computed range.')
-            traj_indexes = np.asarray(list(range(r_dim.size)), dtype=np.integer)
-
+            traj_indexes = np.arange(r_dim.size)
         try:
             pvar = self.get_variables_by_attributes(cf_role='profile_id')[0]
             profile_indexes = normalize_array(pvar)
             assert profile_indexes.size == p_dim.size
         except BaseException:
             logger.warning('Could not pull profile values from a variable with "cf_role=profile_id", using a computed range.')
-            profile_indexes = np.asarray(list(range(p_dim.size)), dtype=np.integer)
+            profile_indexes = np.arange(p_dim.size)
 
         # Profile dimension
         tvars = self.t_axes()
@@ -178,7 +177,7 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
         y = np.ma.masked_all(o_dim.size, dtype=yvar.dtype)
         si = 0
 
-        for i in range(0, p_dim.size):
+        for i in np.arange(profile_indexes.size):
             ei = si + o_index_var[i]
             p[si:ei] = profile_indexes[i]
             r[si:ei] = traj_indexes[r_index_var[i]]
@@ -226,7 +225,7 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
             if dvar.dimensions == (p_dim.name,):
                 vdata = np.ma.masked_all(o_dim.size, dtype=dvar.dtype)
                 si = 0
-                for i in range(0, p_dim.size):
+                for i in np.arange(profile_indexes.size):
                     ei = si + o_index_var[i]
                     vdata[si:ei] = dvar[i]
                     si = ei
