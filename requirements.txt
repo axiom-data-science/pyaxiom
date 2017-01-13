@@ -3,7 +3,7 @@ pytz
 python-dateutil
 netCDF4>=1.2.7
 pandas
-pygc
+pygc>=1.1.0
 simplejson
 shapely
 
