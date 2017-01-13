@@ -25,6 +25,7 @@ logger.handlers = [logging.StreamHandler()]
     (IncompleteMultidimensionalTrajectory,        jn(dn(__file__), 'trajectory', 'resources', 'im-multiple.nc')),
     (ContiguousRaggedTrajectoryProfile,           jn(dn(__file__), 'trajectoryProfile', 'resources', 'cr-single.nc')),
     (ContiguousRaggedTrajectoryProfile,           jn(dn(__file__), 'trajectoryProfile', 'resources', 'cr-multiple.nc')),
+    (ContiguousRaggedTrajectoryProfile,           jn(dn(__file__), 'trajectoryProfile', 'resources', 'cr-missing-time.nc')),
     (IncompleteMultidimensionalTimeseries,        jn(dn(__file__), 'timeseries', 'resources', 'im-multiple.nc')),
     (OrthogonalMultidimensionalTimeseries,        jn(dn(__file__), 'timeseries', 'resources', 'om-single.nc')),
     (OrthogonalMultidimensionalTimeseries,        jn(dn(__file__), 'timeseries', 'resources', 'om-multiple.nc')),
@@ -49,3 +50,4 @@ def test_is_mine(klass, fp):
         if hasattr(s, 'is_mine'):
             logger.info('  * Trying {}...'.format(s.__name__))
             assert s.is_mine(dsg) is False
+    dsg.close()

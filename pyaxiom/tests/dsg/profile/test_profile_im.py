@@ -18,24 +18,26 @@ class TestIncompleteMultidimensionalProfile(unittest.TestCase):
         self.multi = os.path.join(os.path.dirname(__file__), 'resources', 'im-multiple.nc')
 
     def test_imp_load(self):
-        IncompleteMultidimensionalProfile(self.multi)
+        IncompleteMultidimensionalProfile(self.multi).close()
 
     def test_imp_dataframe(self):
-        IncompleteMultidimensionalProfile(self.multi).to_dataframe()
+        with IncompleteMultidimensionalProfile(self.multi) as ncd:
+            ncd.to_dataframe()
 
     def test_imp_calculated_metadata(self):
-        m = IncompleteMultidimensionalProfile(self.multi).calculated_metadata()
-        assert m.min_t == dtparse('1990-01-01 00:00:00')
-        assert m.max_t == dtparse('1990-01-06 21:00:00')
-        assert len(m.profiles.keys()) == 137
-        assert np.isclose(m.profiles[0].min_z, 0.05376)
-        assert np.isclose(m.profiles[0].max_z, 9.62958)
-        assert m.profiles[0].t == dtparse('1990-01-01 00:00:00')
-        assert m.profiles[0].x == 119
-        assert m.profiles[0].y == 171
+        with IncompleteMultidimensionalProfile(self.multi) as ncd:
+            m = ncd.calculated_metadata()
+            assert m.min_t == dtparse('1990-01-01 00:00:00')
+            assert m.max_t == dtparse('1990-01-06 21:00:00')
+            assert len(m.profiles.keys()) == 137
+            assert np.isclose(m.profiles[0].min_z, 0.05376)
+            assert np.isclose(m.profiles[0].max_z, 9.62958)
+            assert m.profiles[0].t == dtparse('1990-01-01 00:00:00')
+            assert m.profiles[0].x == 119
+            assert m.profiles[0].y == 171
 
-        assert np.isclose(m.profiles[141].min_z, 0.04196)
-        assert np.isclose(m.profiles[141].max_z, 9.85909)
-        assert m.profiles[141].t == dtparse('1990-01-06 21:00:00')
-        assert m.profiles[141].x == 34
-        assert m.profiles[141].y == 80
+            assert np.isclose(m.profiles[141].min_z, 0.04196)
+            assert np.isclose(m.profiles[141].max_z, 9.85909)
+            assert m.profiles[141].t == dtparse('1990-01-06 21:00:00')
+            assert m.profiles[141].x == 34
+            assert m.profiles[141].y == 80
