@@ -189,7 +189,8 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
         t_mask = False
         tfill = get_fill_value(tvar)
         if tfill is not None:
-            t_mask = t.mask
+            t_mask = np.copy(t.mask)
+            t[t_mask] = 0
 
         t = np.ma.MaskedArray(
             nc4.num2date(t, tvar.units, getattr(tvar, 'calendar', 'standard'))

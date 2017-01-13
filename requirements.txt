@@ -1,7 +1,7 @@
 numpy
 pytz
 python-dateutil
-netCDF4>=1.2.4,<1.2.5
+netCDF4>=1.2.7
 pandas
 pygc
 simplejson
