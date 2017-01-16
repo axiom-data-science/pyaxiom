@@ -73,7 +73,6 @@ def generic_masked(arr, attrs=None, minv=None, maxv=None, keep_nan=False):
     valid_max attributes.
     """
     attrs = attrs or {}
-    logger.info(attrs)
 
     if 'valid_min' in attrs:
         minv = arr.dtype.type(attrs['valid_min'])
