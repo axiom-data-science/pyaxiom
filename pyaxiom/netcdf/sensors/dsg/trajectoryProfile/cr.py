@@ -10,7 +10,7 @@ import netCDF4 as nc4
 from pygc import great_distance
 from shapely.geometry import Point, LineString
 
-from pyaxiom.utils import unique_justseen, normalize_array, get_fill_value, get_dtype
+from pyaxiom.utils import unique_justseen, normalize_array, get_fill_value, get_dtype, generic_masked
 from pyaxiom.netcdf import CFDataset
 from pyaxiom import logger
 
@@ -200,16 +200,16 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
         t[t_mask] = np.ma.masked
 
         # X and Y
-        x = np.ma.fix_invalid(np.ma.MaskedArray(x.round(5)))
-        y = np.ma.fix_invalid(np.ma.MaskedArray(y.round(5)))
+        x = generic_masked(x, minv=-180, maxv=180).round(5)
+        y = generic_masked(y, minv=-90, maxv=90).round(5)
 
         # Distance
         d = np.ma.zeros(o_dim.size, dtype=np.float64)
         d[1:] = great_distance(start_latitude=y[0:-1], end_latitude=y[1:], start_longitude=x[0:-1], end_longitude=x[1:])['distance']
-        d = np.ma.fix_invalid(np.ma.MaskedArray(np.cumsum(d)).round(2))
+        d = generic_masked(np.cumsum(d), minv=0).round(2)
 
         # Sample dimension
-        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:].round(5).flatten()))
+        z = generic_masked(zvar[:].flatten(), attrs=self.vatts(zvar.name)).round(5)
 
         df_data = {
             't': t,
@@ -229,14 +229,14 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
             if dvar.dimensions == (p_dim.name,):
                 vdata = np.ma.masked_all(o_dim.size, dtype=dvar.dtype)
                 si = 0
-                for i in np.arange(profile_indexes.size):
-                    ei = si + o_index_var[i]
-                    vdata[si:ei] = dvar[i]
+                for j in np.arange(profile_indexes.size):
+                    ei = si + o_index_var[j]
+                    vdata[si:ei] = dvar[j]
                     si = ei
 
             # Sample dimensions
             elif dvar.dimensions == (o_dim.name,):
-                vdata = np.ma.fix_invalid(np.ma.MaskedArray(dvar[:].round(3).flatten()))
+                vdata = generic_masked(dvar[:].flatten(), attrs=self.vatts(dvar.name)).round(3)
 
             else:
                 logger.warning("Skipping variable {}... it didn't seem like a data variable".format(dvar))
