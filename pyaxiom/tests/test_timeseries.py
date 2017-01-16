@@ -84,7 +84,6 @@ class TestTimeSeries(unittest.TestCase):
             'time': [ datetime.utcfromtimestamp(x) for x in times ],
             'value': values
         })
-        logger.info(df)
         ts = TimeSeries.from_dataframe(
             df,
             output_directory=self.output_directory,
