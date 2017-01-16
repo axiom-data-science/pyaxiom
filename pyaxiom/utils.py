@@ -65,7 +65,7 @@ def normalize_array(var):
         return var[:]
 
 
-def generic_masked(arr, attrs=None, minv=None, maxv=None, keep_nan=False):
+def generic_masked(arr, attrs=None, minv=None, maxv=None, mask_nan=True):
     """
     Returns a masked array with anything outside of values masked.
     The minv and maxv parameters take precendence over any dict values.
@@ -92,7 +92,7 @@ def generic_masked(arr, attrs=None, minv=None, maxv=None, keep_nan=False):
     minv = minv if minv is not None else info.min
     maxv = maxv if maxv is not None else info.max
 
-    if keep_nan is False:
+    if mask_nan is True:
         arr = np.ma.fix_invalid(arr)
 
     return np.ma.masked_outside(

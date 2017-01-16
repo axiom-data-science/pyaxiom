@@ -9,7 +9,7 @@ import pandas as pd
 from pygc import great_distance
 from shapely.geometry import Point, LineString
 
-from pyaxiom.utils import unique_justseen, normalize_array
+from pyaxiom.utils import unique_justseen, normalize_array, generic_masked
 from pyaxiom.netcdf import CFDataset
 from pyaxiom import logger
 
@@ -139,7 +139,7 @@ class OrthogonalMultidimensionalProfile(CFDataset):
         logger.debug(['profile data size: ', p.size])
 
         # Z
-        z = np.ma.fix_invalid(np.ma.MaskedArray(zvar[:])).round(5)
+        z = generic_masked(zvar[:], attrs=self.vatts(zvar.name)).round(5)
         try:
             z = np.tile(z, ps)
         except ValueError:
@@ -157,19 +157,18 @@ class OrthogonalMultidimensionalProfile(CFDataset):
 
         # X
         xvar = self.x_axes()[0]
-        x = np.ma.fix_invalid(np.ma.MaskedArray(xvar[:]))
-        x = x.repeat(zs).round(5)
+        x = generic_masked(xvar[:].repeat(zs), attrs=self.vatts(xvar.name)).round(5)
         logger.debug(['x data size: ', x.size])
 
         # Y
         yvar = self.y_axes()[0]
-        y = np.ma.fix_invalid(np.ma.MaskedArray(yvar[:]))
-        y = y.repeat(zs).round(5)
+        y = generic_masked(yvar[:].repeat(zs), attrs=self.vatts(yvar.name)).round(5)
         logger.debug(['y data size: ', y.size])
 
         # Distance
-        d = np.append([0], great_distance(start_latitude=y[0:-1], end_latitude=y[1:], start_longitude=x[0:-1], end_longitude=x[1:])['distance'])
-        d = np.ma.fix_invalid(np.ma.MaskedArray(np.cumsum(d)).astype(np.float64).round(2))
+        d = np.ma.zeros(y.size, dtype=np.float64)
+        d[1:] = great_distance(start_latitude=y[0:-1], end_latitude=y[1:], start_longitude=x[0:-1], end_longitude=x[1:])['distance']
+        d = generic_masked(np.cumsum(d), minv=0).round(2)
         logger.debug(['distance data size: ', d.size])
 
         df_data = {
