@@ -5,3 +5,5 @@ output/*
 build/*
 dist/*
 *.egg-info*
+
+test-1-*.csv

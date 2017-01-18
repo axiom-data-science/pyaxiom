@@ -6,6 +6,7 @@ pandas
 pygc>=1.1.0
 simplejson
 shapely
+xarray>=0.8.2
 
 #Optional
 #pynco

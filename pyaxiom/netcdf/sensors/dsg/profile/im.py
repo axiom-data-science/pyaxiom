@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 import numpy as np
 import pandas as pd
 import netCDF4 as nc4
+import xarray
+from xarray.backends import NetCDF4DataStore
 from pygc import great_distance
 from shapely.geometry import Point, LineString
 
@@ -12,6 +14,29 @@ from pyaxiom.utils import unique_justseen, normalize_array, get_dtype, dict_upda
 from pyaxiom.netcdf import CFDataset
 from pyaxiom.netcdf.utils import cf_safe_name
 from pyaxiom import logger
+
+
+class CustomXarrayReader(NetCDF4DataStore):
+    # Helper class to allow xarray to read already-opened datasets instead of
+    # passing a path to a nc file directly
+    # This is needed so that we can leverage xarray from our CFDataset subclasses
+    # as needed without revamping everything to use xarray instead/directly
+    # This may add limitations to what we can do with xarray since some of the variables
+    # below are initialized to None
+
+    def __init__(self, dataset: CFDataset):
+
+        # prep from _open_netcdf4_group:
+        for var in dataset.variables.values():
+            var.set_auto_maskandscale(False)
+
+        self.ds = dataset
+        self.format = 'NETCDF4'
+        self.is_remote = False
+        self._opener = None
+        self._filename = None
+        self._mode = None
+        super(NetCDF4DataStore, self).__init__(None)
 
 
 class IncompleteMultidimensionalProfile(CFDataset):
@@ -177,6 +202,26 @@ class IncompleteMultidimensionalProfile(CFDataset):
             first_loc=first_loc,
             geometry=geometry
         )
+
+    def to_dataframe_test(self):
+        # This is meant to be a proof-of-concept partial reimplementation of the below `to_dataframe`
+        # method that leverages xarray to simplify the code
+
+        # Initialize xarray using our existing dataset object
+        store = CustomXarrayReader(self)
+        ds = xarray.Dataset.load_store(store)
+
+        # This is the simple/default method, with no customizations:
+        return ds.to_dataframe()
+
+        # # This is what is happening behind the scenes:
+        # ordered_dims = ds.dims
+        # columns = [k for k in ds if k not in ds.dims]
+        # data = [ds.variables[k].expand_dims(ordered_dims).values.reshape(-1)
+        #         for k in columns]
+        # index = ds.coords.to_index(ordered_dims)
+        # # Can append to columns/data to add additional columns (e.g. distance)
+        # return pd.DataFrame(OrderedDict(zip(columns, data)), index=index)
 
     def to_dataframe(self, clean_cols=True, clean_rows=True):
         pvar = self.get_variables_by_attributes(cf_role='profile_id')[0]
