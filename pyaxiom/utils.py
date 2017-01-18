@@ -65,6 +65,14 @@ def normalize_array(var):
         return var[:]
 
 
+def safe_attribute_typing(zdtype, value):
+    try:
+        return zdtype.type(value)
+    except ValueError:
+        logger.warning("Could not convert {} to type {}".format(value, zdtype))
+        return None
+
+
 def generic_masked(arr, attrs=None, minv=None, maxv=None, mask_nan=True):
     """
     Returns a masked array with anything outside of values masked.
@@ -75,13 +83,13 @@ def generic_masked(arr, attrs=None, minv=None, maxv=None, mask_nan=True):
     attrs = attrs or {}
 
     if 'valid_min' in attrs:
-        minv = arr.dtype.type(attrs['valid_min'])
+        minv = safe_attribute_typing(arr.dtype, attrs['valid_min'])
     if 'valid_max' in attrs:
-        maxv = arr.dtype.type(attrs['valid_max'])
+        maxv = safe_attribute_typing(arr.dtype, attrs['valid_max'])
     if 'valid_range' in attrs:
         vr = attrs['valid_range']
-        minv = arr.dtype.type(vr[0])
-        maxv = arr.dtype.type(vr[1])
+        minv = safe_attribute_typing(arr.dtype, vr[0])
+        maxv = safe_attribute_typing(arr.dtype, vr[1])
 
     # Get the min/max of values that the hardware supports
     try:
