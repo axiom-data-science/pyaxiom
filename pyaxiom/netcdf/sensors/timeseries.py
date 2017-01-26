@@ -352,7 +352,7 @@ class TimeSeries(object):
         logger.info("Setting values for {}...".format(variable_name))
         if len(used_values.shape) == 1:
             var = self._nc.createVariable(variable_name, get_type(used_values), ("time",), fill_value=fillvalue, chunksizes=(self.time_chunk,), zlib=True)
-            var.ncei_template_version = 'NCEI_NetCDF_TimeSeries_Orthogonal_Template_v2.0'
+            self._nc.setncattr('ncei_template_version', 'NCEI_NetCDF_TimeSeries_Orthogonal_Template_v2.0')
             if vertical_axis.size == 1:
                 var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
             else:
@@ -379,7 +379,7 @@ class TimeSeries(object):
         elif len(used_values.shape) == 2:
             var = self._nc.createVariable(variable_name, get_type(used_values), ("time", "z",), fill_value=fillvalue, chunksizes=(self.time_chunk, vertical_axis.size,), zlib=True)
             var.coordinates = "{} {} latitude longitude".format(self.time_axis_name, self.vertical_axis_name)
-            var.ncei_template_version = 'NCEI_NetCDF_TimeSeriesProfile_Orthogonal_Template_v2.0'
+            self._nc.setncattr('ncei_template_version', 'NCEI_NetCDF_TimeSeriesProfile_Orthogonal_Template_v2.0')
         else:
             raise ValueError("Could not create variable.  Shape of data is {!s}.  Expected a dimension of 1 or 2, not {!s}.".format(used_values.shape, len(used_values.shape)))
 
