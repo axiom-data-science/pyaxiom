@@ -240,7 +240,7 @@ class TimeSeries(object):
 
         # Append the instrument to the ancilary variables
         av = getattr(datavar, 'ancillary_variables', '')
-        av += ' instrument'
+        av += ' {}'.format(instr_var_name)
         datavar.ancillary_variables = av.strip()
 
         self._nc.sync()
