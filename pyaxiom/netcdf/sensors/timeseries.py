@@ -513,14 +513,14 @@ class TimeSeries(object):
         self._nc.setncattr("time_coverage_start",    starting.isoformat())
         self._nc.setncattr("time_coverage_end",      ending.isoformat())
         # duration (ISO8601 format)
-        self._nc.setncattr("time_coverage_duration", "P%sS" % str(int(round((ending - starting).total_seconds()))))
+        self._nc.setncattr("time_coverage_duration", "PT{0:d}S".format(int(round((ending - starting).total_seconds()))))
         # resolution (ISO8601 format)
         # subtract adjacent times to produce an array of differences, then get the most common occurance
         diffs = unique_times[1:] - unique_times[:-1]
         uniqs, inverse = np.unique(diffs, return_inverse=True)
         if uniqs.size > 1:
             time_diffs = diffs[np.bincount(inverse).argmax()]
-            self._nc.setncattr("time_coverage_resolution", "P%sS" % str(int(round(time_diffs))))
+            self._nc.setncattr("time_coverage_resolution", "PT{0:d}S".format(int(round(time_diffs))))
 
         # Time
         self.time_chunk = min(full_times.size, 1000)
