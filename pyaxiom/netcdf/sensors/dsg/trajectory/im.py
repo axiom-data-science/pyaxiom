@@ -275,7 +275,7 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
                 'cdm_data_type': 'Trajectory'
             },
             'trajectory' : {
-                'cf_role': 'trajectory',
+                'cf_role': 'trajectory_id',
                 'long_name' : 'trajectory identifier'
             },
             'distance' : {
