@@ -176,7 +176,7 @@ class TimeSeries(object):
 
             nc.setncattr("geospatial_bounds", "POINT({} {})".format(longitude, latitude))
             if not hasattr(nc, "geospatial_bounds_crs"):
-                nc.setncattr("geospatial_bounds_crs", "4326")
+                nc.setncattr("geospatial_bounds_crs", "EPSG:4326")
 
             # Metadata variables
             self.crs = nc.createVariable("crs", "i4")
