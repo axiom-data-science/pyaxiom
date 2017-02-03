@@ -289,6 +289,8 @@ class TimeSeries(object):
                 self.crs.geoid_name = sensor_vertical_datum
                 self.crs.vertical_datum = sensor_vertical_datum
                 self.crs.water_surface_reference_datum = sensor_vertical_datum
+                if not hasattr(self._nc, "geospatial_bounds_vertical_crs"):
+                    self._nc.setncattr("geospatial_bounds_vertical_crs", sensor_vertical_datum)
             except AttributeError:
                 pass
 
@@ -396,6 +398,8 @@ class TimeSeries(object):
                         self.crs.geoid_name = v
                         self.crs.vertical_datum = v
                         self.crs.water_surface_reference_datum = v
+                        if not hasattr(self._nc, "geospatial_bounds_vertical_crs"):
+                            self._nc.setncattr("geospatial_bounds_vertical_crs", v)
                     except AttributeError:
                         pass
 

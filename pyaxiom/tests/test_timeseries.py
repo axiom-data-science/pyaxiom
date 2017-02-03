@@ -170,7 +170,7 @@ class TestTimeSeries(unittest.TestCase):
                         verticals=verticals)
 
         values = np.repeat([20, 21, 22, 23, 24, 25], len(verticals))
-        attrs = dict(standard_name='sea_water_temperature')
+        attrs = dict(standard_name='sea_water_temperature', vertical_datum='NAVD88')
         ts.add_variable('temperature', values=values, attributes=attrs)
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
@@ -182,6 +182,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(nc.geospatial_lon_units, 'degrees_east')
         self.assertEqual(nc.geospatial_vertical_units, 'meters')
         self.assertEqual(nc.geospatial_vertical_positive, 'down')
+        self.assertEqual(nc.geospatial_bounds_vertical_crs, 'NAVD88')
         self.assertEqual(nc.featureType, 'timeSeriesProfile')
         self.assertEqual(nc.geospatial_vertical_resolution, '1 1')
         self.assertEqual(nc.geospatial_vertical_min, 0)
@@ -660,6 +661,7 @@ class TestTimeSeries(unittest.TestCase):
 
         gats = copy(self.global_attributes)
         gats['naming_authority'] = 'pyaxiom'
+        gats['geospatial_bounds_vertical_crs'] = 'NAVD88'
 
         ts = TimeSeries(output_directory=self.output_directory,
                         latitude=self.latitude,
@@ -672,14 +674,14 @@ class TestTimeSeries(unittest.TestCase):
 
         values = [20, 21, 22, 23, 24, 25]
         attrs = dict(standard_name='sea_water_temperature')
-        ts.add_variable('temperature', values=values, attributes=attrs, create_instrument_variable=True)
+        ts.add_variable('temperature', values=values, attributes=attrs, create_instrument_variable=True, sensor_vertical_datum='bar')
 
         nc = netCDF4.Dataset(os.path.join(self.output_directory, filename))
         assert nc is not None
+        assert nc.geospatial_bounds_vertical_crs == 'NAVD88'  # First one set
 
         datavar = nc.variables.get('temperature')
         instrument_var_name = datavar.instrument
-
         instvar = nc.variables[instrument_var_name]
         assert instvar.short_name == 'sea_water_temperature'
         assert instvar.ioos_code == urnify(gats['naming_authority'], gats['id'], attrs)
