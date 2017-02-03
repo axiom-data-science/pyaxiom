@@ -409,6 +409,14 @@ class TimeSeries(object):
                     except BaseException:
                         logger.info('Could not add attribute {}: {}, skipping.'.format(k, v))
 
+        # Add a long name if it doesn't exist
+        if not hasattr(var, 'long_name'):
+            varunits = getattr(var, 'units', None)
+            vartitle = getattr(var, 'standard_name', getattr(var, 'name'))
+            vartitle = vartitle.title().replace('_', ' ')
+            if varunits is not None:
+                vartitle = '{} ({})'.format(vartitle, varunits)
+            var.long_name = vartitle
         var.grid_mapping = 'crs'
         var.platform = 'platform'
         var.ancillary_variables = 'platform'

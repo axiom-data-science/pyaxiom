@@ -76,7 +76,7 @@ class TestTimeSeries(unittest.TestCase):
         times = [0, 1000, 2000, 3000, 4000, 5000]
         verticals = 0
         values = [20, 21, 22, 23, 24, 25]
-        attrs = dict(standard_name='sea_water_temperature')
+        attrs = dict(standard_name='sea_water_temperature', units='degree_Celsius')
 
         # From dataframe
         df = pd.DataFrame({
@@ -115,6 +115,7 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time').size == len(times)
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times)
+        assert nc.variables.get('temperature').long_name == 'Sea Water Temperature (degree_Celsius)'
         assert (nc.variables.get('temperature')[:] == np.asarray(values)).all()
 
     def test_timeseries_extra_values(self):
@@ -155,6 +156,7 @@ class TestTimeSeries(unittest.TestCase):
         assert nc.variables.get('time')[:].dtype == np.int32
         assert nc.variables.get('temperature').size == len(times)
         assert (nc.variables.get('temperature')[:] == np.asarray(values[0:6])).all()
+        assert nc.variables.get('temperature').long_name == 'Sea Water Temperature'
 
     def test_timeseries_profile(self):
         filename = 'test_timeseries_profile.nc'
