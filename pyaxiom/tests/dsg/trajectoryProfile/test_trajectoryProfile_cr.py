@@ -49,6 +49,10 @@ class TestContinousRaggedTrajectoryProfile(unittest.TestCase):
             assert np.isclose(traj.first_loc.y, 34.30818)
             assert len(traj.profiles) == 17
 
+            for n, v in st.variables.items():
+                assert np.issubdtype(v.dtype, np.int64) is False
+                assert np.issubdtype(v.dtype, np.uint64) is False
+
         with ContiguousRaggedTrajectoryProfile(self.multi) as mt:
             m = mt.calculated_metadata()
             assert m.min_t == dtparse('1990-01-01 00:00:00')
@@ -79,6 +83,10 @@ class TestContinousRaggedTrajectoryProfile(unittest.TestCase):
             assert traj4.profiles[19].x == -44
             assert traj4.profiles[19].y == 47
 
+            for n, v in mt.variables.items():
+                assert np.issubdtype(v.dtype, np.int64) is False
+                assert np.issubdtype(v.dtype, np.uint64) is False
+
         with ContiguousRaggedTrajectoryProfile(self.missing_time) as mmt:
             t = mmt.calculated_metadata()
             assert t.min_t == dtparse('2014-11-16 21:32:29.952500')
@@ -93,6 +101,10 @@ class TestContinousRaggedTrajectoryProfile(unittest.TestCase):
             assert np.isclose(traj.first_loc.x, -124.681526638573)
             assert np.isclose(traj.first_loc.y,  43.5022166666667)
             assert len(traj.profiles) == 13
+
+            for n, v in mmt.variables.items():
+                assert np.issubdtype(v.dtype, np.int64) is False
+                assert np.issubdtype(v.dtype, np.uint64) is False
 
     def test_just_missing_time(self):
         with ContiguousRaggedTrajectoryProfile(self.missing_time) as mmt:

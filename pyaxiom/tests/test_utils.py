@@ -3,15 +3,34 @@ import shutil
 import unittest
 import tempfile
 
+import pytest
 import numpy as np
 
 from pyaxiom.netcdf.dataset import EnhancedDataset
-from pyaxiom.utils import generic_masked
+from pyaxiom.utils import generic_masked, get_dtype
 
 import logging
 from pyaxiom import logger
 logger.level = logging.INFO
 logger.handlers = [logging.StreamHandler()]
+
+
+int_scenarios = [
+    (np.array([1, 2, 3], dtype=np.int64), np.int32),
+    (np.array([1, 2, 3], dtype=np.int32), np.int32),
+    (np.array([1, 2, 3], dtype=int), np.int32),
+    (np.array([1, 2, 9999999999], dtype=int), np.float64)
+]
+
+
+@pytest.mark.parametrize("data,expected_dtype", int_scenarios)
+def test_int64_dtypes(data, expected_dtype):
+    assert get_dtype(data) == expected_dtype
+    with EnhancedDataset('foo.nc', 'w') as ncd:
+        ncd.createDimension('three', 3)
+        v = ncd.createVariable('foo', expected_dtype, ('three',))
+        v[:] = data
+    os.remove('foo.nc')
 
 
 class TestUtils(unittest.TestCase):

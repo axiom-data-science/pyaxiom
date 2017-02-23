@@ -52,6 +52,10 @@ class TestIncompleteMultidimensionalTrajectory(unittest.TestCase):
             assert np.isclose(traj1.first_loc.x, -7.9336)
             assert np.isclose(traj1.first_loc.y, 42.00339)
 
+            for n, v in ncd.variables.items():
+                assert np.issubdtype(v.dtype, np.int64) is False
+                assert np.issubdtype(v.dtype, np.uint64) is False
+
         with IncompleteMultidimensionalTrajectory(self.multi) as ncd:
             m = ncd.calculated_metadata()
             assert m.min_t == dtparse('1990-01-01 00:00:00')
@@ -72,6 +76,10 @@ class TestIncompleteMultidimensionalTrajectory(unittest.TestCase):
             assert traj3.max_t == dtparse('1990-01-02 12:00:00')
             assert np.isclose(traj3.first_loc.x, -73.3026)
             assert np.isclose(traj3.first_loc.y, 1.95761)
+
+            for n, v in ncd.variables.items():
+                assert np.issubdtype(v.dtype, np.int64) is False
+                assert np.issubdtype(v.dtype, np.uint64) is False
 
     def test_json_attributes(self):
         with IncompleteMultidimensionalTrajectory(self.single) as s:

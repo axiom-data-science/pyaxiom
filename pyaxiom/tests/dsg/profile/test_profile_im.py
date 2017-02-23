@@ -41,3 +41,7 @@ class TestIncompleteMultidimensionalProfile(unittest.TestCase):
             assert m.profiles[141].t == dtparse('1990-01-06 21:00:00')
             assert m.profiles[141].x == 34
             assert m.profiles[141].y == 80
+
+            for n, v in ncd.variables.items():
+                assert np.issubdtype(v.dtype, np.int64) is False
+                assert np.issubdtype(v.dtype, np.uint64) is False

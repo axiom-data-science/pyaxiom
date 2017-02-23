@@ -122,13 +122,32 @@ def get_fill_value(var):
     return None
 
 
+def fix_int_dtypes(obj):
+    # DAP does not support int64 until DAP4 and NetCDF Java doesn't
+    # seem to support int64 either. Try to convert to int32 and
+    # fall back to a double if we can't do the converstion.
+    if np.issubdtype(obj.dtype, np.int64) or np.issubdtype(obj.dtype, np.uint64):
+        ii = np.iinfo(np.int32)
+        if np.any(obj > ii.max) or np.any(obj < ii.min):
+            # Data can't fit in an int32
+            return np.float64
+        else:
+            return np.int32
+    else:
+        return obj.dtype
+
+
 def get_dtype(obj):
+    if isinstance(obj, (tuple, list)):
+        obj = obj[0]
+
     if hasattr(obj, 'dtype'):
         if obj.dtype == object:
             return str
-        return obj.dtype
-    elif isinstance(obj, (tuple, list)):
-        return getattr(obj[0], 'dtype', type(obj[0]))
+        elif np.issubdtype(obj.dtype, int):
+            return fix_int_dtypes(obj)
+        else:
+            return obj.dtype
     else:
         return type(obj)
 

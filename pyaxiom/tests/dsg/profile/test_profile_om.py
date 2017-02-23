@@ -41,6 +41,10 @@ class TestOrthogonalMultidimensionalProfile(unittest.TestCase):
             assert np.isclose(s.profiles[1].x, -149.3582)
             assert np.isclose(s.profiles[1].y, 60.0248)
 
+            for n, v in ncd.variables.items():
+                assert np.issubdtype(v.dtype, np.int64) is False
+                assert np.issubdtype(v.dtype, np.uint64) is False
+
         with OrthogonalMultidimensionalProfile(self.multi) as ncd:
             m = ncd.calculated_metadata()
             assert m.min_t == dtparse('2005-09-10 07:08:00')
@@ -57,6 +61,10 @@ class TestOrthogonalMultidimensionalProfile(unittest.TestCase):
             assert m.profiles[37].t == dtparse('2005-09-14 17:27:00')
             assert np.isclose(m.profiles[37].x, -149.468)
             assert np.isclose(m.profiles[37].y, 60.01)
+
+            for n, v in ncd.variables.items():
+                assert np.issubdtype(v.dtype, np.int64) is False
+                assert np.issubdtype(v.dtype, np.uint64) is False
 
     def test_json_attributes(self):
         ds = os.path.join(os.path.dirname(__file__), 'resources', 'om-1dy11.nc')
