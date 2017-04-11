@@ -131,7 +131,10 @@ class TimeSeries(object):
             nc.setncattr("date_issued", now_date)
             if not hasattr(nc, "date_metadata_modified"):
                 nc.setncattr("date_metadata_modified", now_date)
-            nc.setncattr('cdm_data_type', 'Station')
+
+            # Allow the customization of this attribute
+            if 'cdm_data_type' not in global_attributes:
+                nc.setncattr('cdm_data_type', 'Station')
 
             old_history = getattr(nc, 'history', '')
             new_history = '{} - {} - {}'.format(now_date, 'pyaxiom', 'File created using pyaxiom')
