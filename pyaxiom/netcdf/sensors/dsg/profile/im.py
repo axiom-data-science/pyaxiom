@@ -162,8 +162,11 @@ class IncompleteMultidimensionalProfile(CFDataset):
         first_row = df.iloc[0]
         first_loc = Point(first_row.x, first_row.y)
         if geometries:
-            coords = unique_justseen(zip(df.x.tolist(), df.y.tolist()))
-            coords = [ (x, y) for x, y in coords if not math.isnan(x) and not math.isnan(y) ]
+            null_coordinates = df.x.isnull() | df.y.isnull()
+            coords = list(unique_justseen(zip(
+                df.x[~null_coordinates].tolist(),
+                df.y[~null_coordinates].tolist()
+            )))
             if len(coords) > 1:
                 geometry = LineString(coords)  # noqa
             elif len(coords) == 1:

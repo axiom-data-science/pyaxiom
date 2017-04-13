@@ -170,8 +170,11 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
 
             geometry = None
             if geometries:
-                coords = unique_justseen(zip(tgroup.x.tolist(), tgroup.y.tolist()))
-                coords = [ (x, y) for x, y in coords if not math.isnan(x) and not math.isnan(y) ]
+                null_coordinates = tgroup.x.isnull() | tgroup.y.isnull()
+                coords = list(unique_justseen(zip(
+                    tgroup.x[~null_coordinates].tolist(),
+                    tgroup.y[~null_coordinates].tolist()
+                )))
                 if len(coords) > 1:
                     geometry = LineString(coords)
                 elif coords == 1:
