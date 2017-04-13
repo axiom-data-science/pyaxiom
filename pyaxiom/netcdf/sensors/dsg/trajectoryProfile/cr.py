@@ -1,5 +1,6 @@
 #!python
 # coding=utf-8
+import math
 from datetime import datetime
 from collections import namedtuple
 
@@ -83,7 +84,8 @@ class ContiguousRaggedTrajectoryProfile(CFDataset):
             first_row = tgroup.iloc[0]
             first_loc = Point(first_row.x, first_row.y)
             if geometries:
-                coords = list(unique_justseen(zip(tgroup.x, tgroup.y)))
+                coords = unique_justseen(zip(tgroup.x.tolist(), tgroup.y.tolist()))
+                coords = [ (x, y) for x, y in coords if not math.isnan(x) and not math.isnan(y) ]
                 if len(coords) > 1:
                     geometry = LineString(coords)
                 elif coords == 1:

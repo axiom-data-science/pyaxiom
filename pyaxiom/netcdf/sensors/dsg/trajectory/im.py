@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import math
 import tempfile
 
 from datetime import datetime
@@ -169,7 +170,8 @@ class IncompleteMultidimensionalTrajectory(CFDataset):
 
             geometry = None
             if geometries:
-                coords = list(unique_justseen(zip(tgroup.x, tgroup.y)))
+                coords = unique_justseen(zip(tgroup.x.tolist(), tgroup.y.tolist()))
+                coords = [ (x, y) for x, y in coords if not math.isnan(x) and not math.isnan(y) ]
                 if len(coords) > 1:
                     geometry = LineString(coords)
                 elif coords == 1:
