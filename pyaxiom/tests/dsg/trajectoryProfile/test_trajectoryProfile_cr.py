@@ -132,5 +132,5 @@ class TestContinousRaggedTrajectoryProfile(unittest.TestCase):
 
             traj = t.trajectories["clark-20150709T1803"]
             coords = list(wktloads(traj.geometry.wkt).coords)
-            assert math.nan not in [ x for x, y in coords ]
-            assert math.nan not in [ y for x, y in coords ]
+            assert True not in [ math.isnan(x) for x, y in coords ]
+            assert True not in [ math.isnan(y) for x, y in coords ]
