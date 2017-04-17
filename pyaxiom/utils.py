@@ -187,10 +187,8 @@ def dictify_urn(urn, combine_interval=True):
 
     d = dict(standard_name=standard_name)
 
-    # Discriminant
-    if '-' in ioos_urn.component:
-        d['discriminant'] = standard_name.split('-')[-1]
-        d['standard_name'] = standard_name.split('-')[0]
+    if ioos_urn.discriminant is not None:
+        d['discriminant'] = ioos_urn.discriminant
 
     intervals = []
     cell_methods = []
@@ -316,7 +314,7 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
         logger.warning("Had to randomly generate a variable name: {0}".format(variable_name))
 
     if 'discriminant' in data_dict and data_dict['discriminant']:
-        variable_name = '{}-{}'.format(variable_name, data_dict['discriminant'])
+        variable_name = '{}:{}'.format(variable_name, data_dict['discriminant'])
 
     if intervals:
         intervals = list(set(intervals))  # Unique them
@@ -329,7 +327,7 @@ def urnify_from_dict(naming_authority, station_identifier, data_dict):
                 authority=naming_authority,
                 label=station_identifier,
                 component=variable_name,
-                version=None)
+                discriminant=None)
 
     return u.urn
 

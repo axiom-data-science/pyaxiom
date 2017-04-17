@@ -9,11 +9,11 @@ class IoosUrn(object):
 
     def __init__(self, *args, **kwargs):
 
-        self.asset_type = None
-        self.authority  = None
-        self.label      = None
-        self.component  = None
-        self.version    = None
+        self.asset_type   = None
+        self.authority    = None
+        self.label        = None
+        self.component    = None
+        self.discriminant = None
 
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -34,15 +34,15 @@ class IoosUrn(object):
         urn.label      = parts[4]
         if len(parts) > 5:
             if urn.asset_type == 'station':
-                urn.version = parts[5]
+                urn.discriminant = parts[5]
             elif len(parts) > 6:
-                # Also a verion specified, so this has to be the component
+                # Also a discriminant specified, so this has to be the component
                 urn.component = parts[5] + extras
             else:
-                logger.debug("Assuming that {0} is the 'component' piece of the URN (not the 'version')".format(parts[5] + extras))
+                logger.debug("Assuming that {0} is the 'component' piece of the URN (not the 'discriminant')".format(parts[5] + extras))
                 urn.component = parts[5] + extras
         if len(parts) > 6:
-            urn.version = parts[6]
+            urn.discriminant = parts[6]
         if len(parts) > 7:
             pass
             logger.warning("The URN is too long stripping off '{}'".format(':'.join(parts[7:])))
@@ -55,8 +55,8 @@ class IoosUrn(object):
         z = 'urn:ioos:{0}:{1}:{2}'.format(self.asset_type, self.authority, self.label)
         if self.component is not None:
             z += ':{}'.format(self.component)
-        if self.version is not None:
-            z += ':{}'.format(self.version)
+        if self.discriminant is not None:
+            z += ':{}'.format(self.discriminant)
         return z.lower()
 
     def valid(self):
